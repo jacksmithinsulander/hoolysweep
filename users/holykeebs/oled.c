@@ -2,6 +2,10 @@
 #include "quantum.h"
 #include <string.h>
 
+#ifdef HK_BONGO_ENABLE
+#include "bongocat.h"
+#endif
+
 static const char* pointer_kind_to_string(hk_pointer_kind kind) {
     switch (kind) {
         case POINTER_KIND_NONE:
@@ -187,9 +191,15 @@ void hk_oled_render_layerinfo(void) {
 
 bool oled_task_user(void) {
     if (g_hk_state.init) {
-        hk_oled_render_keyinfo();
-        hk_oled_render_pointer_state();
-        hk_oled_render_layerinfo();
+        if (true || g_hk_state.display.show_bongo) {
+            #ifdef HK_BONGO_ENABLE
+            hk_oled_render_bongo();
+            #endif
+        } else {
+            hk_oled_render_keyinfo();
+            hk_oled_render_pointer_state();
+            hk_oled_render_layerinfo();
+        }
     }
     return true;
 }

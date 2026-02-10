@@ -30,6 +30,8 @@ hk_state_t g_hk_state = {0};
 hk_eeprom_config_t hk_eeprom_config;
 
 static void deserialize_eeconfig_to_state(const hk_eeprom_config_t* config) {
+    g_hk_state.display.show_bongo = config->bongo;
+
     g_hk_state.main.cursor_mode = config->pointing.main_cursor_mode;
     g_hk_state.main.drag_scroll = config->pointing.main_drag_scroll;
     g_hk_state.main.scroll_lock = config->pointing.main_scroll_lock;
@@ -48,6 +50,8 @@ static void deserialize_eeconfig_to_state(const hk_eeprom_config_t* config) {
 }
 
 static void serialize_state_to_eeconfig(hk_eeprom_config_t* config) {
+    config->bongo = g_hk_state.display.show_bongo;
+
     config->pointing.main_cursor_mode = g_hk_state.main.cursor_mode;
     config->pointing.main_drag_scroll = g_hk_state.main.drag_scroll;
     config->pointing.main_scroll_lock = g_hk_state.main.scroll_lock;
@@ -722,6 +726,10 @@ void keyboard_post_init_user(void) {
         }
         printf("keyboard_post_init_user: eeprom data not found, initializing\n");
         eeconfig_init_user();
+    } else if (hk_eeprom_config.version != 101) {
+        // If the version isn't the latest one then the structure changed, reset it to avoid deserialization issues.
+        printf("keyboard_post_init_user: eeprom version is old, resetting to avoid deserialization issues (found %u, expected 101)\n", hk_eeprom_config.version);
+        eeconfig_init_user();
     } else {
         g_hk_state = init_state();
         deserialize_eeconfig_to_state(&hk_eeprom_config);
@@ -738,7 +746,7 @@ void                       eeconfig_init_user(void) {
 
     memset(&hk_eeprom_config, 0, sizeof(hk_eeprom_config_t));
     hk_eeprom_config.check = true;
-    hk_eeprom_config.version = 100; // Increment this when changing the eeprom config structure.
+    hk_eeprom_config.version = 101; // Increment this when changing the eeprom config structure.
     serialize_state_to_eeconfig(&hk_eeprom_config);
 
     eeconfig_init_keymap();

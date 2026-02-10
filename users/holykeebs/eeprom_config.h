@@ -26,6 +26,7 @@ typedef union PACKED {
         } pointing;
 
         bool check       : 1;
+        bool bongo       : 1;
         uint8_t version;
     };
 } hk_eeprom_config_t;

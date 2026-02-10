@@ -588,6 +588,12 @@ ifeq ($(strip $(OLED_FLIP)), yes)
 	MSG_OLED_FLIPPED = (flipped)
 endif
 
+ifeq ($(strip $(BONGO_ENABLE)), yes)
+	WPM_ENABLE = yes
+	SRC += $(USER_PATH)/bongocat.c
+	OPT_DEFS += -DHK_BONGO_ENABLE
+endif
+
 ifeq ($(strip $(TRACKBALL_RGB_RAINBOW)), yes)
 	OPT_DEFS += -DHK_PIMORONI_TRACKBALL_RGB_RAINBOW
 	SRC += quantum/color.c

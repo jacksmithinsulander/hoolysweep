@@ -39,6 +39,7 @@ typedef struct PACKED {
 #define HK_OLED_MAX_PRESSING_KEYCODES 6
 
 typedef struct PACKED {
+    bool           show_bongo;
     uint16_t       last_kc;
     keypos_t       last_pos;
     report_mouse_t last_mouse;
