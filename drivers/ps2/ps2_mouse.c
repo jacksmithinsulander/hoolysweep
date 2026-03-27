@@ -50,9 +50,9 @@ static inline bool side_has_trackpoint(void) {
 /* ============================= IMPLEMENTATION ============================ */
 
 /* supports only 3 button mouse at this time */
-void ps2_mouse_init(void) {
+bool ps2_mouse_init(void) {
     if (!side_has_trackpoint()) {
-        return;
+        return true;
     }
 
     ps2_host_init();
@@ -83,6 +83,7 @@ void ps2_mouse_init(void) {
 
     ps2_mouse_init_user();
 
+    return true;
 }
 
 __attribute__((weak)) void ps2_mouse_init_user(void) {}
