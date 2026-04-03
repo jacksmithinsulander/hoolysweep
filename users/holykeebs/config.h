@@ -152,3 +152,7 @@
     #define SPLIT_TRANSACTION_IDS_USER HK_SYNC_STATE
     #define RPC_M2S_BUFFER_SIZE 64
 #endif
+
+// Restores VIA key tester matrix readout disabled by qmk/qmk_firmware#25414.
+// TODO: consider switching to SECURE_ENABLE for a safer unlock-based approach.
+#define VIA_INSECURE

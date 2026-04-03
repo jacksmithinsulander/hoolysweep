@@ -41,3 +41,7 @@
 
 #define RP2040_BOOTLOADER_DOUBLE_TAP_RESET
 #define RP2040_BOOTLOADER_DOUBLE_TAP_RESET_TIMEOUT 1000U
+
+// Restores VIA key tester matrix readout disabled by qmk/qmk_firmware#25414.
+// TODO: consider switching to SECURE_ENABLE for a safer unlock-based approach.
+#define VIA_INSECURE
