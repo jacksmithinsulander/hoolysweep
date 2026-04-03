@@ -18,6 +18,11 @@
 // int8_t (-128..127) per cycle, losing motion data during fast movements.
 #define MOUSE_EXTENDED_REPORT
 
+// Use int16_t for scroll h/v reports and advertise a 1/120 resolution
+// multiplier so the OS applies smooth, sub-line scrolling.
+#define WHEEL_EXTENDED_REPORT
+#define POINTING_DEVICE_HIRES_SCROLL_ENABLE
+
 #define SPI_DRIVER SPID0
 #define SPI_SCK_PIN GP22
 #define SPI_MISO_PIN GP20

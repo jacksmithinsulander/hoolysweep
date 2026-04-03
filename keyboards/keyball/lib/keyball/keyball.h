@@ -25,7 +25,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 #ifndef KEYBALL_SCROLL_DIV_DEFAULT
-#    define KEYBALL_SCROLL_DIV_DEFAULT 4 // 4: 1/8 (1/2^(n-1))
+#    ifdef POINTING_DEVICE_HIRES_SCROLL_ENABLE
+#        define KEYBALL_SCROLL_DIV_DEFAULT 3 // 3: ×2 speed
+#    else
+#        define KEYBALL_SCROLL_DIV_DEFAULT 4 // 4: 1/8 (1/2^(n-1))
+#    endif
 #endif
 
 #ifndef KEYBALL_SCROLLBALL_INHIVITOR

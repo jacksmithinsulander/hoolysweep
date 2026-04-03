@@ -70,10 +70,12 @@ static int16_t divmod16(int16_t *v, int16_t div) {
     return r;
 }
 
+#ifndef POINTING_DEVICE_HIRES_SCROLL_ENABLE
 // clip2int8 clips an integer fit into int8_t.
 static inline int8_t clip2int8(int16_t v) {
     return (v) < -127 ? -127 : (v) > 127 ? 127 : (int8_t)v;
 }
+#endif
 
 #ifdef OLED_ENABLE
 static const char *format_4d(int16_t d) {
@@ -157,6 +159,40 @@ __attribute__((weak)) void keyball_on_apply_motion_to_mouse_move(report_mouse_t 
 }
 
 __attribute__((weak)) void keyball_on_apply_motion_to_mouse_scroll(report_mouse_t *report, report_mouse_t *output, bool is_left) {
+#ifdef POINTING_DEVICE_HIRES_SCROLL_ENABLE
+    // With hires scrolling each tick is 1/120 of a line.  The scroll
+    // divider (1-7) is mapped so that the default (4) is 1:1 passthrough,
+    // lower values multiply (faster), higher values divide (slower):
+    //
+    //   div | effect | direction
+    //   ----+--------+----------
+    //    1  |  ×4    | fastest
+    //    2  |  ×3    |
+    //    3  |  ×2    | default (hires)
+    //    4  |  ×1    |
+    //    5  |  ÷2    |
+    //    6  |  ÷3    |
+    //    7  |  ÷4    | slowest
+    //
+    // SCRL_DVD (decrease) → faster, SCRL_DVI (increase) → slower.
+    int16_t sdiv = keyball_get_scroll_div();
+    int16_t mx = report->x;
+    int16_t my = report->y;
+    int16_t x, y;
+    if (sdiv >= 4) {
+        int16_t d = sdiv - 3; // 4→1, 5→2, 6→3, 7→4
+        x = divmod16(&mx, d);
+        y = divmod16(&my, d);
+        report->x = mx;
+        report->y = my;
+    } else {
+        int16_t mul = 5 - sdiv; // 1→4, 2→3, 3→2
+        x = mx * mul;
+        y = my * mul;
+        report->x = 0;
+        report->y = 0;
+    }
+#else
     // consume motion of trackball.
     int16_t div = 1 << (keyball_get_scroll_div() - 1);
     // Copy out of packed struct to avoid unaligned pointer access.
@@ -166,11 +202,12 @@ __attribute__((weak)) void keyball_on_apply_motion_to_mouse_scroll(report_mouse_
     int16_t y = divmod16(&my, div);
     report->x = mx;
     report->y = my;
+#endif
 
     // apply to mouse report.
 #if KEYBALL_MODEL == 61 || KEYBALL_MODEL == 39 || KEYBALL_MODEL == 147 || KEYBALL_MODEL == 44
-    output->h = -clip2int8(x);
-    output->v = clip2int8(y);
+    output->h = -x;
+    output->v = y;
     if (is_left) {
         output->h = -output->h;
         output->v = -output->v;
