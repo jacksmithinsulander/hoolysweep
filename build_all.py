@@ -140,9 +140,9 @@ def build_commands():
 
 def main() -> int:
     commands = [
-        # Command('keyball/keyball39', 'via'),
-        # Command('keyball/keyball44', 'via'),
-        # Command('keyball/keyball61', 'via'),
+        Command('keyball/keyball39', 'via'),
+        Command('keyball/keyball44', 'via'),
+        Command('keyball/keyball61', 'via'),
     ]
     for command in build_commands():
         command.prepend_argument('USER_NAME=holykeebs')
