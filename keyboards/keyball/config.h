@@ -13,6 +13,11 @@
 #define SPLIT_WATCHDOG_ENABLE
 #define SPLIT_WATCHDOG_TIMEOUT 3000
 
+// Use int16_t for mouse x/y reports so the full PMW3360 sensor range
+// (-32768..32767) is preserved. Without this, QMK clips sensor deltas to
+// int8_t (-128..127) per cycle, losing motion data during fast movements.
+#define MOUSE_EXTENDED_REPORT
+
 #define SPI_DRIVER SPID0
 #define SPI_SCK_PIN GP22
 #define SPI_MISO_PIN GP20
