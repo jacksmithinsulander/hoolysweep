@@ -290,6 +290,15 @@ void hk_process_scroll(const hk_pointer_state_t* pointer_state, report_mouse_t* 
     }
 
     if (pointer_state->pointer_scroll_buffer_size > 0) {
+#ifdef POINTING_DEVICE_HIRES_SCROLL_ENABLE
+        // Hires emits sub-line values that the OS smooths, so the threshold
+        // buffer (originally a debounce for coarse ±1 line scrolls) is dropped.
+        // pointer_scroll_buffer_size is repurposed as a speed divisor: larger
+        // = slower. One unit of cursor motion → resolution/divisor hires units.
+        const int16_t tick = pointing_device_get_hires_scroll_resolution();
+        mouse_report->h = (mouse_report->h * tick) / pointer_state->pointer_scroll_buffer_size;
+        mouse_report->v = (mouse_report->v * tick) / pointer_state->pointer_scroll_buffer_size;
+#else
         static int16_t scroll_buffer_h = 0;
         static int16_t scroll_buffer_v = 0;
 
@@ -298,15 +307,16 @@ void hk_process_scroll(const hk_pointer_state_t* pointer_state, report_mouse_t* 
         mouse_report->h = 0;
         mouse_report->v = 0;
 
-    if (abs(scroll_buffer_h) > pointer_state->pointer_scroll_buffer_size) {
-        mouse_report->h = scroll_buffer_h > 0 ? 1 : -1;
-        scroll_buffer_h = 0;
-    }
+        if (abs(scroll_buffer_h) > pointer_state->pointer_scroll_buffer_size) {
+            mouse_report->h = scroll_buffer_h > 0 ? 1 : -1;
+            scroll_buffer_h = 0;
+        }
 
-    if (abs(scroll_buffer_v) > pointer_state->pointer_scroll_buffer_size) {
-        mouse_report->v = scroll_buffer_v > 0 ? 1 : -1;
-        scroll_buffer_v = 0;
-    }
+        if (abs(scroll_buffer_v) > pointer_state->pointer_scroll_buffer_size) {
+            mouse_report->v = scroll_buffer_v > 0 ? 1 : -1;
+            scroll_buffer_v = 0;
+        }
+#endif
     }
 
     mouse_hv_report_t h = mouse_report->h;

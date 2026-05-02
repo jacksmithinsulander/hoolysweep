@@ -599,6 +599,10 @@ ifeq ($(strip $(TRACKBALL_RGB_RAINBOW)), yes)
 	SRC += quantum/color.c
 endif
 
+ifeq ($(strip $(HIRES_SCROLL)), yes)
+	OPT_DEFS += -DHK_HIRES_SCROLL
+endif
+
 print-summary: cpfirmware
 	printf "\n%s" ' _           _       _             _         ' >&2
 	printf "\n%s" '| |__   ___ | |_   _| | _____  ___| |__  ___ ' >&2
