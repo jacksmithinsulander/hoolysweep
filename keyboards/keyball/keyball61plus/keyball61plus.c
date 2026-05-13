@@ -37,16 +37,6 @@ matrix_row_t matrix_mask[MATRIX_ROWS] = {
 };
 // clang-format on
 
-// Per-side LED counts (per-key + 6 underglow).
-#define KEYBALL61PLUS_LEDS_LEFT  38
-#define KEYBALL61PLUS_LEDS_RIGHT 35
-
 void keyball_on_adjust_layout(keyball_adjust_t v) {
-#ifdef RGBLIGHT_ENABLE
-    // adjust RGBLIGHT's clipping and effect ranges
-    uint8_t lednum_this = is_keyboard_left() ? KEYBALL61PLUS_LEDS_LEFT : KEYBALL61PLUS_LEDS_RIGHT;
-    uint8_t lednum_that = !keyball.that_enable ? 0 : (is_keyboard_left() ? KEYBALL61PLUS_LEDS_RIGHT : KEYBALL61PLUS_LEDS_LEFT);
-    rgblight_set_clipping_range(is_keyboard_left() ? 0 : lednum_that, lednum_this);
-    rgblight_set_effect_range(0, lednum_this + lednum_that);
-#endif
+    // RGB Matrix handles per-side LED counts via split_count, no clipping needed.
 }

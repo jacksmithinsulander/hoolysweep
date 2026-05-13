@@ -23,9 +23,8 @@ MOUSEKEY_ENABLE = yes
 # Rotary encoder (one per side, declared in keyboard.json).
 ENCODER_MAP_ENABLE = yes
 
-# Enabled only one of RGBLIGHT and RGB_MATRIX if necessary.
-RGBLIGHT_ENABLE = no        # Enable RGBLIGHT
-RGB_MATRIX_ENABLE = no      # Enable RGB_MATRIX (not work yet)
+# Per-key RGB lighting. Enable per keymap.
+RGB_MATRIX_ENABLE = no
 RGB_MATRIX_DRIVER = ws2812
 
 # Do not enable SLEEP_LED_ENABLE. it uses the same timer as BACKLIGHT_ENABLE

@@ -38,13 +38,36 @@ const uint16_t PROGMEM encoder_map[][NUM_ENCODERS][NUM_DIRECTIONS] = {
 #endif
 // clang-format on
 
-void keyboard_post_init_user() {
-#ifdef RGBLIGHT_ENABLE
-    // Force RGB lights to show test animation without writing EEPROM.
-    rgblight_enable_noeeprom();
-    rgblight_mode_noeeprom(RGBLIGHT_MODE_RGB_TEST);
+void keyboard_post_init_user(void) {
+#ifdef RGB_MATRIX_ENABLE
+    // Wiring test: indicators_user below lights one LED at a time; use a
+    // static-color animation so the base layer doesn't interfere.
+    rgb_matrix_enable_noeeprom();
+    rgb_matrix_mode_noeeprom(RGB_MATRIX_SOLID_COLOR);
+    rgb_matrix_sethsv_noeeprom(0, 0, 0);
 #endif
 }
+
+#ifdef RGB_MATRIX_ENABLE
+// Walk through every LED in chain order, one at a time, coloring each by its
+// position in the chain so the highlight sweeps a full rainbow across all
+// indices. Watch the spot travel to verify that LED index N is physically
+// where keyboard.json's rgb_matrix.layout[N] says it is.
+#    define WIRING_TEST_STEP_MS 400
+bool rgb_matrix_indicators_user(void) {
+    static uint16_t last = 0;
+    static uint8_t  idx  = 0;
+    if (timer_elapsed(last) >= WIRING_TEST_STEP_MS) {
+        last = timer_read();
+        idx  = (idx + 1) % RGB_MATRIX_LED_COUNT;
+    }
+    HSV     hsv = {.h = (uint8_t)((uint16_t)idx * 255 / RGB_MATRIX_LED_COUNT), .s = 255, .v = 255};
+    RGB     rgb = hsv_to_rgb(hsv);
+    rgb_matrix_set_color_all(0, 0, 0);
+    rgb_matrix_set_color(idx, rgb.r, rgb.g, rgb.b);
+    return false;
+}
+#endif
 
 #ifdef OLED_ENABLE
 

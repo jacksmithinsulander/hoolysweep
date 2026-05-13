@@ -36,25 +36,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define SPLIT_TRANSACTION_IDS_KB KEYBALL_GET_INFO
 
-// RGB LED settings
+// RGB Matrix settings
 // Left:  32 per-key + 6 underglow = 38
 // Right: 29 per-key + 6 underglow = 35
-#ifdef RGBLIGHT_ENABLE
-#    define RGBLIGHT_LED_COUNT      73
-#    define RGBLED_SPLIT    { 38, 35 }
-#    ifndef RGBLIGHT_LIMIT_VAL
-#        define RGBLIGHT_LIMIT_VAL  120 // limitated for power consumption
-#    endif
-#    ifndef RGBLIGHT_VAL_STEP
-#        define RGBLIGHT_VAL_STEP   12
-#    endif
-#    ifndef RGBLIGHT_HUE_STEP
-#        define RGBLIGHT_HUE_STEP   17
-#    endif
-#    ifndef RGBLIGHT_SAT_STEP
-#        define RGBLIGHT_SAT_STEP   17
-#    endif
-#endif
 #ifdef RGB_MATRIX_ENABLE
-#    define RGB_MATRIX_SPLIT    { 38, 35 }
+#    define RGB_MATRIX_MAXIMUM_BRIGHTNESS 120  // limit for power consumption
+#    define RGB_MATRIX_SLEEP                   // turn off LEDs when host is asleep
 #endif
