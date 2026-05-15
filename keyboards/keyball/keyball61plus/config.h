@@ -36,6 +36,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define SPLIT_TRANSACTION_IDS_KB KEYBALL_GET_INFO
 
+// Encoder press/release gap. Windows needs >0 ms between the v=1 and v=0
+// wheel reports or it drops the event. 10 ms matches what QMK's own
+// non-encoder-map default path uses (tap_code_delay(..., 10)).
+#define ENCODER_MAP_KEY_DELAY 10
+
+// Parent keyball/config.h advertises POINTING_DEVICE_HIRES_SCROLL_ENABLE,
+// which tells the OS to divide wheel deltas by 120. mousekey's default
+// wheel_unit() is 1, which becomes 1/120 of a scroll line — invisible.
+// Bump the base wheel delta so MS_WHLU/MS_WHLD send one full hires notch.
+#define MOUSEKEY_WHEEL_DELTA 120
+
 // RGB Matrix settings
 // Left:  32 per-key + 6 underglow = 38
 // Right: 29 per-key + 6 underglow = 35
