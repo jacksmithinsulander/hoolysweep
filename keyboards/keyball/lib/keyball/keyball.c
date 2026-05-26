@@ -528,7 +528,7 @@ void keyboard_post_init_kb(void) {
     }
 #endif
 
-    keyball.this_have_ball = pmw33xx_init_ok;
+    keyball.this_have_ball = pointing_device_get_status() == POINTING_DEVICE_STATUS_SUCCESS;
     keyball_set_cpi(CPI_DEFAULT);
 
     // read keyball configuration from EEPROM

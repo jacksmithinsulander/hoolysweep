@@ -236,11 +236,8 @@ pmw33xx_report_t pmw33xx_read_burst(uint8_t sensor) {
     return report;
 }
 
-bool pmw33xx_init_ok = false;
-
 bool pmw33xx_init_wrapper(void) {
-    pmw33xx_init_ok = pmw33xx_init(0);
-    return pmw33xx_init_ok;
+    return pmw33xx_init(0);
 }
 
 void pmw33xx_set_cpi_wrapper(uint16_t cpi) {
