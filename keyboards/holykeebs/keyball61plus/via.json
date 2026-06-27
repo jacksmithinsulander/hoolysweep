@@ -1,7 +1,7 @@
 {
   "name": "Keyball61+",
-  "vendorId": "0x5957",
-  "productId": "0x0101",
+  "vendorId": "0xC3AC",
+  "productId": "0x3141",
   "matrix": { "rows": 10, "cols": 8 },
   "lighting": "qmk_rgblight",
   "layouts" : {
