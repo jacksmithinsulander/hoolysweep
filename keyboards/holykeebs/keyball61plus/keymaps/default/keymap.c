@@ -33,9 +33,9 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   ),
 
   [3] = LAYOUT_universal(
-    UG_TOGG  , HK_DUMP  , HK_C_SCROLL, HK_I_SCROLL, _______, _______ ,                                 RGB_M_P  , RGB_M_B  , RGB_M_R  , RGB_M_SW , RGB_M_SN , RGB_M_K  ,
+    UG_TOGG  , HK_AML_T , HK_AML_UP, HK_AML_DN, HK_C_SCROLL, HK_I_SCROLL,                              RGB_M_P  , RGB_M_B  , RGB_M_R  , RGB_M_SW , RGB_M_SN , RGB_M_K  ,
     UG_NEXT  , UG_HUEU  , UG_SATU  , UG_VALU  , _______  , _______  ,                                  RGB_M_X  , RGB_M_G  , RGB_M_T  , RGB_M_TW , _______  , _______  ,
-    UG_PREV  , UG_HUED  , UG_SATD  , UG_VALD  , _______  , _______  ,                              HK_P_SET_D , HK_P_SET_S, HK_P_SET_BUF, HK_S_MODE_T, HK_SAVE, HK_RESET ,
+    UG_PREV  , UG_HUED  , UG_SATD  , UG_VALD  , HK_DUMP  , _______  ,                              HK_P_SET_D , HK_P_SET_S, HK_P_SET_BUF, HK_S_MODE_T, HK_SAVE, HK_RESET ,
     _______  , _______  ,HK_D_MODE_T, HK_D_MODE, KC_LSFT , _______  , EE_CLR   ,            EE_CLR   , KC_HOME  , KC_PGDN  , KC_PGUP  , KC_END   , _______  , _______  ,
     QK_BOOT  , _______  , KC_LEFT  , KC_DOWN  , KC_UP    , KC_RGHT  , _______  ,            _______  , KC_BSPC  , _______  , _______  , _______  , _______  , QK_BOOT
   ),

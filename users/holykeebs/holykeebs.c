@@ -9,6 +9,10 @@
 #include "report.h"
 #include "color.h"
 
+#ifdef POINTING_DEVICE_AUTO_MOUSE_ENABLE
+#include "pointing_device_auto_mouse.h"
+#endif
+
 #include "pointing.h"
 #include "pimoroni.h"
 #include "trackpoint.h"
@@ -90,6 +94,13 @@ static void serialize_state_to_eeconfig(hk_eeprom_config_t* config) {
     config->pointing.peripheral_default_sensitivity = serialize_sensitivity(g_hk_state.peripheral.pointer_kind, g_hk_state.peripheral.pointer_default_sensitivity);
     config->pointing.peripheral_sniping_sensitivity = serialize_sensitivity(g_hk_state.peripheral.pointer_kind, g_hk_state.peripheral.pointer_sniping_sensitivity);
     config->pointing.peripheral_scroll_buffer_size = g_hk_state.peripheral.pointer_scroll_buffer_size;
+
+#ifdef POINTING_DEVICE_AUTO_MOUSE_ENABLE
+    // Auto-mouse state lives in QMK's auto_mouse, not g_hk_state, so read it from
+    // there directly.
+    config->aml_enable = get_auto_mouse_enable();
+    config->aml_timeout = get_auto_mouse_timeout();
+#endif
 }
 
 static void write_eeconfig(void) {
@@ -462,6 +473,14 @@ static void hk_apply_sensitivity_all(void) {
     hk_apply_sensitivity(&g_hk_state.peripheral, /*side_peripheral=*/true);
 }
 
+// Pushes the loaded auto-mouse settings into QMK's auto_mouse. Call at init.
+static void hk_apply_aml(void) {
+#ifdef POINTING_DEVICE_AUTO_MOUSE_ENABLE
+    set_auto_mouse_enable(hk_eeprom_config.aml_enable);
+    set_auto_mouse_timeout(hk_eeprom_config.aml_timeout);
+#endif
+}
+
 static float hk_pointer_sensitivity_step(const hk_pointer_state_t* state) {
     switch (state->pointer_kind) {
         case POINTER_KIND_PMW3360:
@@ -679,6 +698,10 @@ bool process_record_user(uint16_t keycode, keyrecord_t* record) {
             if (record->event.pressed) {
                 g_hk_state = init_state();
                 hk_apply_sensitivity_all();
+#ifdef POINTING_DEVICE_AUTO_MOUSE_ENABLE
+                set_auto_mouse_enable(true);
+                set_auto_mouse_timeout(AUTO_MOUSE_TIME);
+#endif
                 write_eeconfig();
             }
             break;
@@ -752,6 +775,26 @@ bool process_record_user(uint16_t keycode, keyrecord_t* record) {
                 state_changed = true;
             }
             break;
+
+#ifdef POINTING_DEVICE_AUTO_MOUSE_ENABLE
+        case HK_AUTO_MOUSE_TOGGLE:
+            if (record->event.pressed) {
+                set_auto_mouse_enable(!get_auto_mouse_enable());
+            }
+            break;
+        case HK_AUTO_MOUSE_TIMEOUT_UP:
+            if (record->event.pressed) {
+                uint16_t t = get_auto_mouse_timeout() + 50;
+                set_auto_mouse_timeout(t > 2550 ? 2550 : t);
+            }
+            break;
+        case HK_AUTO_MOUSE_TIMEOUT_DOWN:
+            if (record->event.pressed) {
+                uint16_t t = get_auto_mouse_timeout();
+                set_auto_mouse_timeout(t >= 100 ? t - 50 : 50);
+            }
+            break;
+#endif
 
     }
     if (state_changed) {
@@ -884,9 +927,9 @@ void keyboard_post_init_user(void) {
         }
         printf("keyboard_post_init_user: eeprom data not found, initializing\n");
         eeconfig_init_user();
-    } else if (hk_eeprom_config.version != 101) {
+    } else if (hk_eeprom_config.version != 102) {
         // If the version isn't the latest one then the structure changed, reset it to avoid deserialization issues.
-        printf("keyboard_post_init_user: eeprom version is old, resetting to avoid deserialization issues (found %u, expected 101)\n", hk_eeprom_config.version);
+        printf("keyboard_post_init_user: eeprom version is old, resetting to avoid deserialization issues (found %u, expected 102)\n", hk_eeprom_config.version);
         eeconfig_init_user();
     } else {
         g_hk_state = init_state();
@@ -894,8 +937,10 @@ void keyboard_post_init_user(void) {
         debug_hk_state_to_console(&g_hk_state);
     }
 
-    // Push the loaded/initial sensitivity to any hardware-CPI sensor (both sides).
+    // Push the loaded/initial sensitivity to any hardware-CPI sensor (both sides),
+    // and the loaded auto-mouse settings into QMK's auto_mouse.
     hk_apply_sensitivity_all();
+    hk_apply_aml();
 
     keyboard_post_init_keymap();
 }
@@ -907,7 +952,14 @@ void                       eeconfig_init_user(void) {
 
     memset(&hk_eeprom_config, 0, sizeof(hk_eeprom_config_t));
     hk_eeprom_config.check = true;
-    hk_eeprom_config.version = 101; // Increment this when changing the eeprom config structure.
+    hk_eeprom_config.version = 102; // Increment this when changing the eeprom config structure.
+#ifdef POINTING_DEVICE_AUTO_MOUSE_ENABLE
+    // Default the auto-mouse layer on — QMK leaves it off, so a board that enables
+    // the feature would otherwise never auto-activate the mouse layer. serialize
+    // below then captures this default into the eeprom block.
+    set_auto_mouse_enable(true);
+    set_auto_mouse_timeout(AUTO_MOUSE_TIME);
+#endif
     serialize_state_to_eeconfig(&hk_eeprom_config);
 
     eeconfig_init_keymap();

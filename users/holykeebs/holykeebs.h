@@ -47,6 +47,16 @@ enum hk_keycodes {
 
     // Inverts the scroll direction.
     HK_INVERT_SCROLL_DIRECTION, // 0x7E0B
+
+    // Toggles the auto-mouse layer at runtime. The layer is enabled at build time
+    // via POINTING_DEVICE_AUTO_MOUSE_ENABLE; pointer motion temporarily activates
+    // it. Saved with HK_SAVE.
+    HK_AUTO_MOUSE_TOGGLE, // 0x7E0C
+
+    // Adjusts the auto-mouse layer timeout (how long it stays active after motion
+    // stops) by +/- 50ms. Saved with HK_SAVE.
+    HK_AUTO_MOUSE_TIMEOUT_UP,   // 0x7E0D
+    HK_AUTO_MOUSE_TIMEOUT_DOWN, // 0x7E0E
 };
 
 #define HK_SAVE      HK_SAVE_SETTINGS
@@ -61,6 +71,9 @@ enum hk_keycodes {
 #define HK_D_MODE_T  HK_DRAGSCROLL_MODE_TOGGLE
 #define HK_C_SCROLL  HK_CYCLE_SCROLL_LOCK
 #define HK_I_SCROLL  HK_INVERT_SCROLL_DIRECTION
+#define HK_AML_T     HK_AUTO_MOUSE_TOGGLE
+#define HK_AML_UP    HK_AUTO_MOUSE_TIMEOUT_UP
+#define HK_AML_DN    HK_AUTO_MOUSE_TIMEOUT_DOWN
 
 // Renders the secondary (peripheral) OLED. The weak default mirrors the master's
 // info panels (the state is split-synced); a board overrides it to show its own

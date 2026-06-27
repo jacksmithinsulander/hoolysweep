@@ -27,7 +27,9 @@ typedef union PACKED {
 
         bool check       : 1;
         bool bongo       : 1;
+        bool aml_enable  : 1;
         uint8_t version;
+        uint16_t aml_timeout;
     };
 } hk_eeprom_config_t;
 
