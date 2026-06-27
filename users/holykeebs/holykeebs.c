@@ -105,6 +105,14 @@ static void hk_configure_cirque_common(hk_pointer_state_t* state) {
     state->pointer_sniping_sensitivity = 1.0;
 }
 
+static void hk_configure_pmw3360_common(hk_pointer_state_t* state) {
+    // PMW3360 sensitivity is realized as hardware CPI (see hk_apply_sensitivity),
+    // so these values are raw CPI, not a software multiplier.
+    state->pointer_default_sensitivity = 800;
+    state->pointer_sniping_sensitivity = 400;
+    state->pointer_scroll_buffer_size = 8;
+}
+
 static hk_state_t init_state(void) {
     printf("init_state\n");
     hk_state_t state = {
@@ -160,6 +168,8 @@ static hk_state_t init_state(void) {
         state.main.pointer_kind = POINTER_KIND_CIRQUE40;
     #elif defined(HK_POINTING_DEVICE_RIGHT_TPS43)
         state.main.pointer_kind = POINTER_KIND_TPS43;
+    #elif defined(HK_POINTING_DEVICE_RIGHT_PMW3360)
+        state.main.pointer_kind = POINTER_KIND_PMW3360;
     #endif
 
     #ifdef HK_POINTING_DEVICE_LEFT_PIMORONI
@@ -172,6 +182,8 @@ static hk_state_t init_state(void) {
         state.peripheral.pointer_kind = POINTER_KIND_CIRQUE40;
     #elif defined(HK_POINTING_DEVICE_LEFT_TPS43)
         state.peripheral.pointer_kind = POINTER_KIND_TPS43;
+    #elif defined(HK_POINTING_DEVICE_LEFT_PMW3360)
+        state.peripheral.pointer_kind = POINTER_KIND_PMW3360;
     #endif
 
     // TPS65 is only supported for unibody keyboards, so check that to know if we have a split keyboard.
@@ -198,6 +210,9 @@ static hk_state_t init_state(void) {
             break;
         case POINTER_KIND_PIMORONI_TRACKBALL:
             hk_configure_pimoroni_common(&state.main);
+            break;
+        case POINTER_KIND_PMW3360:
+            hk_configure_pmw3360_common(&state.main);
             break;
         default:
             printf("init_state: unknown main pointer kind\n");
@@ -233,6 +248,9 @@ static hk_state_t init_state(void) {
             case POINTER_KIND_PIMORONI_TRACKBALL:
                 hk_configure_pimoroni_common(&state.peripheral);
                 state.peripheral.drag_scroll = true;
+                break;
+            case POINTER_KIND_PMW3360:
+                hk_configure_pmw3360_common(&state.peripheral);
                 break;
             default:
                 printf("init_state: unknown peripheral pointer kind\n");

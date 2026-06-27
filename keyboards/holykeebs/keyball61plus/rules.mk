@@ -15,10 +15,17 @@ SRC += lib/duplexmatrix/duplexmatrix.c
 # Split keyboard.
 SERIAL_DRIVER = vendor
 
-# PMW3360 optical trackball sensor. (Pointing + serial config will move to the
-# holykeebs userspace once it gains a PMW3360 device kind.)
+# PMW3360 optical trackball sensor. Unlike the modular holykeebs boards (which
+# pick a sensor per half via the POINTING_DEVICE=<left>_<right> matrix), the
+# keyball61plus is always built dual-PMW3360-capable and combined: both halves
+# run the PMW3360 driver regardless of how many balls are physically installed.
+# The count is detected at runtime (which side has a ball), so the board declares
+# its fixed pointing config here rather than via a POINTING_DEVICE build var. The
+# userspace only recognizes POINTER_KIND_PMW3360 (kind + CPI + rotation).
 POINTING_DEVICE_ENABLE = yes
 POINTING_DEVICE_DRIVER = pmw3360
+OPT_DEFS += -DHK_POINTING_DEVICE_LEFT_PMW3360 -DHK_POINTING_DEVICE_RIGHT_PMW3360
+OPT_DEFS += -DSPLIT_POINTING_ENABLE -DPOINTING_DEVICE_COMBINED
 
 MOUSEKEY_ENABLE = yes
 

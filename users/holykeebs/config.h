@@ -24,12 +24,25 @@
 #undef MASTER_RIGHT
 
 #ifdef SPLIT_KEYBOARD
-    #if defined(HK_MASTER_LEFT)
-        #define MASTER_LEFT
-    #elif defined(HK_MASTER_RIGHT)
-        #define MASTER_RIGHT
-    #else
-        #error "HK_MASTER_LEFT or HK_MASTER_RIGHT not defined in rules.mk"
+    // Handedness + master selection.
+    //
+    // Boards without their own hand detection infer the hand from a forced
+    // master side: the master (whichever half has USB) is pinned to one hand, so
+    // USB must always go to that half. Most holykeebs boards work this way.
+    //
+    // Boards that bring their own hand detection (e.g. keyball61plus's
+    // SPLIT_HAND_MATRIX_GRID) resolve the hand at runtime and the master from
+    // USB/VBUS independently, so no master side is pinned and USB can go to
+    // either half. Don't force one here: it would be ignored anyway (the grid
+    // wins in is_keyboard_left_impl) but is misleading.
+    #if !defined(SPLIT_HAND_MATRIX_GRID) && !defined(SPLIT_HAND_PIN)
+        #if defined(HK_MASTER_LEFT)
+            #define MASTER_LEFT
+        #elif defined(HK_MASTER_RIGHT)
+            #define MASTER_RIGHT
+        #else
+            #error "HK_MASTER_LEFT or HK_MASTER_RIGHT not defined in rules.mk"
+        #endif
     #endif
 
     #define SERIAL_USART_TX_PIN GP1
@@ -81,6 +94,19 @@
 
 #ifdef HK_POINTING_DEVICE_LEFT_CIRQUE40
     #define POINTING_DEVICE_ROTATION_180
+#endif
+
+// PMW3360 optical trackball (keyball61plus). The sensor is mounted rotated, so
+// fix up its axes here. Built dual + combined, so the left half is the
+// non-suffixed (main-path) device and the right half the _RIGHT device. SPI
+// wiring stays in the board config.h (holykeebs devices are otherwise I2C/PS2).
+#ifdef HK_POINTING_DEVICE_LEFT_PMW3360
+    #define POINTING_DEVICE_ROTATION_90
+    #define POINTING_DEVICE_INVERT_Y
+#endif
+#ifdef HK_POINTING_DEVICE_RIGHT_PMW3360
+    #define POINTING_DEVICE_ROTATION_270_RIGHT
+    #define POINTING_DEVICE_INVERT_Y_RIGHT
 #endif
 
 // Generic Cirque configuration.

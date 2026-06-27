@@ -17,7 +17,16 @@ TRI_LAYER_ENABLE = yes
 EXTRAKEY_ENABLE = yes
 MOUSEKEY_ENABLE = yes
 
+# Compile the core userspace whenever a pointing device is present — either
+# selected modularly via POINTING_DEVICE, or enabled directly by the board
+# (keyball61plus, which sets POINTING_DEVICE_ENABLE in its own rules.mk; that
+# runs before this file, so it's already visible here). Pre-set the flag for the
+# modular case so the gate below fires regardless of which path was taken.
 ifdef POINTING_DEVICE
+	POINTING_DEVICE_ENABLE = yes
+endif
+
+ifeq ($(strip $(POINTING_DEVICE_ENABLE)), yes)
 	SRC += $(USER_PATH)/holykeebs.c $(USER_PATH)/hk_debug.c $(USER_PATH)/rpc.c $(USER_PATH)/pimoroni.c $(USER_PATH)/trackpoint.c
 endif
 
@@ -556,7 +565,13 @@ ifeq ($(strip $(POINTING_DEVICE)), cirque40_trackpoint)
 	MASTER_SIDE = right
 endif
 
-ifeq ($(strip $(MASTER_SIDE)), left)
+# keyball61plus brings its own hand detection (SPLIT_HAND_MATRIX_GRID) and selects
+# the master from USB/VBUS, so no master side is pinned — the userspace config.h
+# skips the forced MASTER_* for it. Don't pass HK_MASTER_* (it'd be unused) and
+# report the runtime behavior in the summary.
+ifeq ($(strip $(KEYBOARD)), holykeebs/keyball61plus)
+	MSG_MASTER_SIDE = auto (USB; hand via matrix grid)
+else ifeq ($(strip $(MASTER_SIDE)), left)
 	MSG_MASTER_SIDE = left
 	OPT_DEFS += -DHK_MASTER_LEFT
 else ifeq ($(strip $(MASTER_SIDE)), middle)

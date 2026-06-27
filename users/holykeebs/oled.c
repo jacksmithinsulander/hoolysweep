@@ -20,6 +20,8 @@ static const char* pointer_kind_to_string(hk_pointer_kind kind) {
             return "CR40 \xB1";
         case POINTER_KIND_TPS43:
             return "TPS43\xB1";
+        case POINTER_KIND_PMW3360:
+            return "PMW  \xB1";
         default:
             return "?????\xB1";
     }
