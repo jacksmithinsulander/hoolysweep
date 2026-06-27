@@ -208,6 +208,19 @@ def main() -> int:
         command.prepend_argument('USER_NAME=holykeebs')
         commands.append(command)
 
+    # Drop duplicate configurations. The console_enabled loop in build_commands()
+    # regenerates every `via` build identically (CONSOLE only affects `hk`), which
+    # both wastes a rebuild and breaks the unique-TARGET invariant that keeps
+    # concurrent builds from racing on a shared .build/obj_<TARGET> and output.
+    seen = set()
+    unique = []
+    for command in commands:
+        name = command.file_name()
+        if name not in seen:
+            seen.add(name)
+            unique.append(command)
+    commands = unique
+
     base_dir = 'build_all'
     for sub in ('debug', 'previous', 'logs'):
         os.makedirs(f'{base_dir}/{sub}', exist_ok=True)
