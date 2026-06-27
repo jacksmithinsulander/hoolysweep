@@ -1,6 +1,8 @@
 import sys
 import subprocess
 import os
+import argparse
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 class Command:
     def __init__(self, kb, km) -> None:
@@ -138,7 +140,65 @@ def build_commands():
 
     return commands
 
+class BuildError(Exception):
+    def __init__(self, file_name, log_path, message):
+        super().__init__(message)
+        self.file_name = file_name
+        self.log_path = log_path
+
+def destination_for(base_dir, file_name):
+    if file_name.startswith('debug'):
+        return f'{base_dir}/debug/{file_name}.uf2'
+    return f'{base_dir}/{file_name}.uf2'
+
+def finalize_command(command, make_jobs, parallel):
+    if parallel > 1:
+        # Make each `make` process report its own exit code independently. By
+        # default QMK records build failures in a *shared* .build/error_occurred
+        # file (it `rm`s it at startup and re-checks it at the end of every
+        # invocation), so concurrent make processes race on that file and corrupt
+        # each other's exit codes. BREAK_ON_ERRORS makes a failing build `exit 1`
+        # directly instead. SKIP_GIT avoids concurrent `git submodule --sync`
+        # writes to .git/config at startup.
+        command.add_argument('BREAK_ON_ERRORS=yes')
+        command.add_argument('SKIP_GIT=yes')
+    command.add_argument_raw(f'-j{make_jobs}')
+    # A unique TARGET gives each build its own .build/obj_<TARGET> directory and
+    # root <TARGET>.uf2, so concurrent builds never clobber each other's output.
+    command.prepend_argument(f'TARGET={command.file_name()}')
+
+def run_build(command, base_dir):
+    file_name = command.file_name()
+    destination = destination_for(base_dir, file_name)
+    log_path = f'{base_dir}/logs/{file_name}.log'
+
+    # Archive firmware from a previous run before overwriting it.
+    if os.path.exists(destination):
+        os.rename(destination, f'{base_dir}/previous/{file_name}.uf2')
+
+    with open(log_path, 'wb') as log:
+        log.write(f'{command.build()}\n\n'.encode())
+        log.flush()
+        proc = subprocess.run(command.build_list(), stdout=log, stderr=subprocess.STDOUT)
+
+    if proc.returncode != 0:
+        raise BuildError(file_name, log_path, f'make exited with {proc.returncode}')
+
+    os.rename(f'{file_name}.uf2', destination)
+    return file_name
+
 def main() -> int:
+    cpu = os.cpu_count() or 4
+    parser = argparse.ArgumentParser(description='Build the holykeebs firmware matrix.')
+    parser.add_argument('-p', '--parallel', type=int, default=max(1, cpu // 4),
+                        help='number of builds to run concurrently (default: %(default)s)')
+    parser.add_argument('-j', '--jobs', type=int, default=0,
+                        help='make jobs per build (default: cpu // parallel)')
+    args = parser.parse_args()
+
+    parallel = max(1, args.parallel)
+    make_jobs = args.jobs if args.jobs > 0 else max(1, cpu // parallel)
+
     commands = [
         Command('keyball/keyball39', 'via'),
         Command('keyball/keyball44', 'via'),
@@ -149,38 +209,36 @@ def main() -> int:
         commands.append(command)
 
     base_dir = 'build_all'
-    build_debug = True
-    os.makedirs(f'{base_dir}/debug', exist_ok=True)
-    os.makedirs(f'{base_dir}/previous', exist_ok=True)
-    commands_file = open(f'{base_dir}/commands.txt', 'w')
+    for sub in ('debug', 'previous', 'logs'):
+        os.makedirs(f'{base_dir}/{sub}', exist_ok=True)
+
     for command in commands:
-        if command.file_name().startswith('debug') and not build_debug:
-            print(f'Skipping {command.file_name()} as build_debug is False')
-            continue
+        finalize_command(command, make_jobs, parallel)
 
-        if command.file_name().startswith('debug'):
-            destination = f'{base_dir}/debug/{command.file_name()}.uf2'
-        else:
-            destination = f'{base_dir}/{command.file_name()}.uf2'
+    with open(f'{base_dir}/commands.txt', 'w') as commands_file:
+        for command in commands:
+            commands_file.write(f'{command.file_name()}: {command.build()}\n')
 
-        if os.path.exists(destination):
-            print(f'File {destination} already exists, moving to previous')
-            os.rename(destination, f'{base_dir}/previous/{command.file_name()}.uf2')
+    total = len(commands)
+    print(f'Building {total} firmwares with {parallel} concurrent build(s) x '
+          f'make -j{make_jobs} (detected {cpu} CPUs)')
 
-        command.add_argument_raw('-j20')
-        command.prepend_argument(f'TARGET={command.file_name()}')
-        print(f'Making {command.file_name()}: {command.build()}')
-        run_command_check_output(command.build().split())
+    done = 0
+    with ThreadPoolExecutor(max_workers=parallel) as executor:
+        futures = [executor.submit(run_build, c, base_dir) for c in commands]
+        try:
+            for future in as_completed(futures):
+                file_name = future.result()  # re-raises BuildError on failure
+                done += 1
+                print(f'[{done}/{total}] OK {file_name}')
+        except BuildError as err:
+            for future in futures:
+                future.cancel()
+            print(f'\nBuild failed: {err.file_name}: {err} (see {err.log_path})')
+            return 1
 
-        print(f'Moving {command.file_name()}.uf2 to {destination}')
-        os.rename(f'{command.file_name()}.uf2', destination)
-        commands_file.write(f'{command.file_name()}: {command.build()}\n')
+    print(f'\nAll {total} builds succeeded.')
     return 0
-
-def run_command_check_output(command):
-    print(f'Running: {command}')
-    output = subprocess.check_output(command)
-    return output
 
 if __name__ == '__main__':
     sys.exit(main())
