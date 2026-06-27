@@ -196,7 +196,7 @@ def main() -> int:
 
     cpu = os.cpu_count() or 4
     parser = argparse.ArgumentParser(description='Build the holykeebs firmware matrix.')
-    parser.add_argument('-p', '--parallel', type=int, default=max(1, cpu // 4),
+    parser.add_argument('-p', '--parallel', type=int, default=max(1, cpu // 2),
                         help='number of builds to run concurrently (default: %(default)s)')
     parser.add_argument('-j', '--jobs', type=int, default=0,
                         help='make jobs per build (default: cpu // parallel)')
