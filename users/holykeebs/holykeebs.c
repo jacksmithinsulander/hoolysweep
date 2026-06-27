@@ -29,6 +29,29 @@ static const char BL = '\xB0'; // Blank indicator character
 hk_state_t g_hk_state = {0};
 hk_eeprom_config_t hk_eeprom_config;
 
+// The pointer_*_sensitivity fields are intentionally overloaded: a software
+// movement multiplier for most devices, the raw hardware CPI for sensors that
+// scale in hardware (PMW3360). The realization is derived from the kind, so no
+// extra stored field is needed.
+static bool uses_hw_cpi(hk_pointer_kind kind) {
+    return kind == POINTER_KIND_PMW3360;
+}
+
+// The int16 EEPROM sensitivity field stores software multipliers ×100 (1.25 ->
+// 125) so the fractional step survives the round-trip, but raw CPI for
+// hardware-CPI devices (800 -> 800). Branch per kind on (de)serialize.
+static float deserialize_sensitivity(hk_pointer_kind kind, int16_t raw) {
+    return uses_hw_cpi(kind) ? (float)raw : raw / 100.0;
+}
+
+static int16_t serialize_sensitivity(hk_pointer_kind kind, float value) {
+    return uses_hw_cpi(kind) ? (int16_t)value : (int16_t)(value * 100);
+}
+
+// Defined below; forward-declared because hk_set_cursor_mode (above its
+// definition) re-applies the CPI when sniping toggles.
+static void hk_apply_sensitivity(const hk_pointer_state_t* state, bool side_peripheral);
+
 static void deserialize_eeconfig_to_state(const hk_eeprom_config_t* config) {
     g_hk_state.display.show_bongo = config->bongo;
 
@@ -36,16 +59,16 @@ static void deserialize_eeconfig_to_state(const hk_eeprom_config_t* config) {
     g_hk_state.main.drag_scroll = config->pointing.main_drag_scroll;
     g_hk_state.main.scroll_lock = config->pointing.main_scroll_lock;
     g_hk_state.main.scroll_direction_inverted = config->pointing.main_scroll_direction_inverted;
-    g_hk_state.main.pointer_default_sensitivity = config->pointing.main_default_sensitivity / 100.0;
-    g_hk_state.main.pointer_sniping_sensitivity = config->pointing.main_sniping_sensitivity / 100.0;
+    g_hk_state.main.pointer_default_sensitivity = deserialize_sensitivity(g_hk_state.main.pointer_kind, config->pointing.main_default_sensitivity);
+    g_hk_state.main.pointer_sniping_sensitivity = deserialize_sensitivity(g_hk_state.main.pointer_kind, config->pointing.main_sniping_sensitivity);
     g_hk_state.main.pointer_scroll_buffer_size = config->pointing.main_scroll_buffer_size;
 
     g_hk_state.peripheral.cursor_mode = config->pointing.peripheral_cursor_mode;
     g_hk_state.peripheral.drag_scroll = config->pointing.peripheral_drag_scroll;
     g_hk_state.peripheral.scroll_lock = config->pointing.peripheral_scroll_lock;
     g_hk_state.peripheral.scroll_direction_inverted = config->pointing.peripheral_scroll_direction_inverted;
-    g_hk_state.peripheral.pointer_default_sensitivity = config->pointing.peripheral_default_sensitivity / 100.0;
-    g_hk_state.peripheral.pointer_sniping_sensitivity = config->pointing.peripheral_sniping_sensitivity / 100.0;
+    g_hk_state.peripheral.pointer_default_sensitivity = deserialize_sensitivity(g_hk_state.peripheral.pointer_kind, config->pointing.peripheral_default_sensitivity);
+    g_hk_state.peripheral.pointer_sniping_sensitivity = deserialize_sensitivity(g_hk_state.peripheral.pointer_kind, config->pointing.peripheral_sniping_sensitivity);
     g_hk_state.peripheral.pointer_scroll_buffer_size = config->pointing.peripheral_scroll_buffer_size;
 }
 
@@ -56,16 +79,16 @@ static void serialize_state_to_eeconfig(hk_eeprom_config_t* config) {
     config->pointing.main_drag_scroll = g_hk_state.main.drag_scroll;
     config->pointing.main_scroll_lock = g_hk_state.main.scroll_lock;
     config->pointing.main_scroll_direction_inverted = g_hk_state.main.scroll_direction_inverted;
-    config->pointing.main_default_sensitivity = (int16_t)(g_hk_state.main.pointer_default_sensitivity * 100);
-    config->pointing.main_sniping_sensitivity = (int16_t)(g_hk_state.main.pointer_sniping_sensitivity * 100);
+    config->pointing.main_default_sensitivity = serialize_sensitivity(g_hk_state.main.pointer_kind, g_hk_state.main.pointer_default_sensitivity);
+    config->pointing.main_sniping_sensitivity = serialize_sensitivity(g_hk_state.main.pointer_kind, g_hk_state.main.pointer_sniping_sensitivity);
     config->pointing.main_scroll_buffer_size = g_hk_state.main.pointer_scroll_buffer_size;
 
     config->pointing.peripheral_cursor_mode = g_hk_state.peripheral.cursor_mode;
     config->pointing.peripheral_drag_scroll = g_hk_state.peripheral.drag_scroll;
     config->pointing.peripheral_scroll_lock = g_hk_state.peripheral.scroll_lock;
     config->pointing.peripheral_scroll_direction_inverted = g_hk_state.peripheral.scroll_direction_inverted;
-    config->pointing.peripheral_default_sensitivity = (int16_t)(g_hk_state.peripheral.pointer_default_sensitivity * 100);
-    config->pointing.peripheral_sniping_sensitivity = (int16_t)(g_hk_state.peripheral.pointer_sniping_sensitivity * 100);
+    config->pointing.peripheral_default_sensitivity = serialize_sensitivity(g_hk_state.peripheral.pointer_kind, g_hk_state.peripheral.pointer_default_sensitivity);
+    config->pointing.peripheral_sniping_sensitivity = serialize_sensitivity(g_hk_state.peripheral.pointer_kind, g_hk_state.peripheral.pointer_sniping_sensitivity);
     config->pointing.peripheral_scroll_buffer_size = g_hk_state.peripheral.pointer_scroll_buffer_size;
 }
 
@@ -367,6 +390,8 @@ static void hk_set_cursor_mode(hk_cursor_mode target_mode, bool enabled, bool si
         state->cursor_mode = CURSOR_MODE_DEFAULT;
     }
 
+    // Sniping toggles the active CPI between the default and sniping values.
+    hk_apply_sensitivity(state, side_peripheral);
     g_hk_state.dirty = true;
 }
 
@@ -377,6 +402,11 @@ static void hk_set_dragscroll(bool enabled, bool side_peripheral) {
 }
 
 static float scale_movement(const hk_pointer_state_t* state, int32_t amount) {
+    if (uses_hw_cpi(state->pointer_kind)) {
+        // The sensor already scaled the motion by its CPI, so pass it through.
+        return amount;
+    }
+
     float sensitivity = 1;
     switch (state->cursor_mode) {
         case CURSOR_MODE_DEFAULT:
@@ -390,8 +420,37 @@ static float scale_movement(const hk_pointer_state_t* state, int32_t amount) {
     return amount * sensitivity;
 }
 
+// Pushes the active sensitivity to a hardware-CPI sensor. Event-driven: call on
+// sensitivity change, cursor-mode (sniping) change, and init — never per report.
+// A no-op for software-scaled devices (those apply sensitivity in scale_movement).
+// Master-only: it sets the local sensor directly and stages the peripheral's CPI
+// via pointing_device_set_cpi_on_side, which the split sync forwards.
+static void hk_apply_sensitivity(const hk_pointer_state_t* state, bool side_peripheral) {
+#if defined(SPLIT_POINTING_ENABLE) && defined(POINTING_DEVICE_COMBINED)
+    if (!uses_hw_cpi(state->pointer_kind)) {
+        return;
+    }
+    float cpi = (state->cursor_mode == CURSOR_MODE_SNIPING) ? state->pointer_sniping_sensitivity : state->pointer_default_sensitivity;
+    // main is this hand; peripheral is the other hand.
+    bool left = side_peripheral ? !is_keyboard_left() : is_keyboard_left();
+    pointing_device_set_cpi_on_side(left, (uint16_t)cpi);
+#else
+    (void)state;
+    (void)side_peripheral;
+#endif
+}
+
+static void hk_apply_sensitivity_all(void) {
+    hk_apply_sensitivity(&g_hk_state.main, /*side_peripheral=*/false);
+    hk_apply_sensitivity(&g_hk_state.peripheral, /*side_peripheral=*/true);
+}
+
 static float hk_pointer_sensitivity_step(const hk_pointer_state_t* state) {
     switch (state->pointer_kind) {
+        case POINTER_KIND_PMW3360:
+            // Sensitivity is hardware CPI; step by the sensor's CPI granularity
+            // (PMW33XX_CPI_STEP == 100).
+            return 100;
         case POINTER_KIND_PIMORONI_TRACKBALL:
             return .1;
         case POINTER_KIND_TRACKPOINT:
@@ -415,6 +474,7 @@ static void hk_cycle_pointer_default_sensitivity(bool forward, bool side_periphe
     float new_value = forward ? state->pointer_default_sensitivity + step : state->pointer_default_sensitivity - step;
     if (new_value > 0) {
         state->pointer_default_sensitivity = new_value;
+        hk_apply_sensitivity(state, side_peripheral);
         g_hk_state.dirty = true;
     }
 }
@@ -425,6 +485,7 @@ static void hk_cycle_pointer_sniping_sensitivity(bool forward, bool side_periphe
     float new_value = forward ? state->pointer_sniping_sensitivity + step : state->pointer_sniping_sensitivity - step;
     if (new_value > 0) {
         state->pointer_sniping_sensitivity = new_value;
+        hk_apply_sensitivity(state, side_peripheral);
         g_hk_state.dirty = true;
     }
 }
@@ -600,6 +661,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t* record) {
         case HK_RESET_SETTINGS:
             if (record->event.pressed) {
                 g_hk_state = init_state();
+                hk_apply_sensitivity_all();
                 write_eeconfig();
             }
             break;
@@ -763,6 +825,9 @@ void keyboard_post_init_user(void) {
         deserialize_eeconfig_to_state(&hk_eeprom_config);
         debug_hk_state_to_console(&g_hk_state);
     }
+
+    // Push the loaded/initial sensitivity to any hardware-CPI sensor (both sides).
+    hk_apply_sensitivity_all();
 
     keyboard_post_init_keymap();
 }
