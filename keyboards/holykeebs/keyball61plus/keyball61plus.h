@@ -16,27 +16,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include QMK_KEYBOARD_H
+#pragma once
 
-#include "lib/keyball/keyball.h"
-
-//////////////////////////////////////////////////////////////////////////////
-
-// clang-format off
-matrix_row_t matrix_mask[MATRIX_ROWS] = {
-    0b01110111,
-    0b01110111,
-    0b01110111,
-    0b11110111,
-    0b11110111,
-    0b01110111,
-    0b01110111,
-    0b01110111,
-    0b11110111,
-    0b11110111,
-};
-// clang-format on
-
-void keyball_on_adjust_layout(keyball_adjust_t v) {
-    // RGB Matrix handles per-side LED counts via split_count, no clipping needed.
-}
+#include "quantum.h"
