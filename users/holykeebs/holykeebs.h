@@ -62,6 +62,12 @@ enum hk_keycodes {
 #define HK_C_SCROLL  HK_CYCLE_SCROLL_LOCK
 #define HK_I_SCROLL  HK_INVERT_SCROLL_DIRECTION
 
+// Renders the secondary (peripheral) OLED. The weak default mirrors the master's
+// info panels (the state is split-synced); a board overrides it to show its own
+// content, e.g. keyball61plus draws the Keyball logo. The master always renders
+// the info panels (or bongocat). Only meaningful with OLED + a split keyboard.
+void hk_oled_render_secondary(void);
+
 // Sets drag-scroll on both halves at once. Use from a layer hook to put the
 // ball(s) into scroll mode while a layer is held (keyball-style: hold the layer,
 // the ball scrolls).

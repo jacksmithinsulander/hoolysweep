@@ -34,3 +34,22 @@ matrix_row_t matrix_mask[MATRIX_ROWS] = {
     0b11110111,
 };
 // clang-format on
+
+#ifdef OLED_ENABLE
+#    include "users/holykeebs/holykeebs.h"
+
+// The peripheral half shows the Keyball logo (this board's heritage), matching
+// the original keyball lib's oledkit. The master half shows the live info panels
+// (handled by the holykeebs userspace). Glyphs 0x80..0xAF in the holykeebs
+// logofont are the logo, laid out 3 rows x 16 columns.
+void hk_oled_render_secondary(void) {
+    char ch = 0x80;
+    for (int y = 0; y < 3; y++) {
+        oled_write_P(PSTR("  "), false);
+        for (int x = 0; x < 16; x++) {
+            oled_write_char(ch++, false);
+        }
+        oled_advance_page(false);
+    }
+}
+#endif

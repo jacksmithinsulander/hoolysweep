@@ -166,6 +166,14 @@ static hk_state_t init_state(void) {
             .pointer_scroll_buffer_size = 0,
         },
         .display = {
+            // Show bongocat by default when it's compiled in (-e BONGO_ENABLE=yes),
+            // otherwise the info panels. There's no runtime toggle, so this build
+            // flag is what selects the OLED content.
+#ifdef HK_BONGO_ENABLE
+            .show_bongo = true,
+#else
+            .show_bongo = false,
+#endif
             .last_kc = KC_NO,
             .last_pos = {0, 0},
             .last_mouse = {0, 0, 0, 0, 0},

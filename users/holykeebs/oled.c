@@ -58,9 +58,13 @@ static char to_1x(uint8_t x) {
 
 static const char* format_sensitivity(float f) {
     static char buf[10] = {0};
-    if (f > 10 || f < -10) {
+    if (f < 0) {
         sprintf(buf, "err");
+    } else if (f >= 100) {
+        // Hardware-CPI devices (PMW3360) store the raw CPI here, e.g. 800.
+        sprintf(buf, "%d", (int)f);
     } else {
+        // Software movement multiplier, e.g. 1.5.
         sprintf(buf, "%2.1f", f);
     }
     return buf;
@@ -191,17 +195,49 @@ void hk_oled_render_layerinfo(void) {
 #    endif
 }
 
+// Secondary (peripheral) OLED content. Weak default mirrors the master's info
+// panels — the same content non-split-aware boards have always shown — using the
+// split-synced state. Boards override this to show something else (keyball61plus
+// draws the Keyball logo). Renders nothing until the first state sync arrives.
+__attribute__((weak)) void hk_oled_render_secondary(void) {
+    if (!g_hk_state.init) {
+        return;
+    }
+    hk_oled_render_keyinfo();
+    hk_oled_render_pointer_state();
+    hk_oled_render_layerinfo();
+}
+
 bool oled_task_user(void) {
-    if (g_hk_state.init) {
-        if (true || g_hk_state.display.show_bongo) {
-            #ifdef HK_BONGO_ENABLE
-            hk_oled_render_bongo();
-            #endif
-        } else {
+    if (is_keyboard_master()) {
+        if (g_hk_state.init) {
+#ifdef HK_BONGO_ENABLE
+            // Opt-in animation; the info panels are the default.
+            if (g_hk_state.display.show_bongo) {
+                hk_oled_render_bongo();
+                return true;
+            }
+#endif
             hk_oled_render_keyinfo();
             hk_oled_render_pointer_state();
             hk_oled_render_layerinfo();
         }
+    } else {
+        hk_oled_render_secondary();
     }
     return true;
+}
+
+oled_rotation_t oled_init_user(oled_rotation_t rotation) {
+#ifdef OLED_FLIP
+    // The peripheral OLED is mounted rotated 180° relative to the master on these
+    // split boards. keyball61plus ships one combined image, so the side can't be
+    // pinned at build time — decide it at runtime. Enabled via -e OLED_FLIP=yes
+    // (see CLAUDE.md). Boards/keymaps that need a different orientation can still
+    // override oled_init_user themselves.
+    if (!is_keyboard_master()) {
+        return OLED_ROTATION_180;
+    }
+#endif
+    return rotation;
 }
