@@ -16,12 +16,13 @@ enum hk_keycodes {
     // The behavior the keycodes below enable can be used with either a single or dual pointing device setup. Normally,
     // it's applied to the main side. To apply it to the peripheral side, hold shift.
 
-    // Sets a scaling factor on x/y movement in the corresponding mode. The default scaling factor is determined by the
-    // type of pointing device.
+    // Sets the pointer sensitivity in the corresponding mode. How it's realized depends on the pointing device: a
+    // software movement factor for most, or the hardware CPI for sensors that support it. The default is determined by
+    // the type of pointing device.
     //
-    // Hold these keys and then press + or - to increase or decrease the corresponding scaling factor.
-    HK_POINTER_SET_DEFAULT_SCALER, // 0x7E03
-    HK_POINTER_SET_SNIPING_SCALER, // 0x7E04
+    // Hold these keys and then press + or - to increase or decrease the corresponding sensitivity.
+    HK_POINTER_SET_DEFAULT_SENSITIVITY, // 0x7E03
+    HK_POINTER_SET_SNIPING_SENSITIVITY, // 0x7E04
 
     // Sets the scroll buffer size. The buffer acccumulates x/y movements and outputs a h/v value when the thershold is reached.
     //
@@ -51,8 +52,8 @@ enum hk_keycodes {
 #define HK_SAVE      HK_SAVE_SETTINGS
 #define HK_RESET     HK_RESET_SETTINGS
 #define HK_DUMP      HK_DUMP_SETTINGS
-#define HK_P_SET_D   HK_POINTER_SET_DEFAULT_SCALER
-#define HK_P_SET_S   HK_POINTER_SET_SNIPING_SCALER
+#define HK_P_SET_D   HK_POINTER_SET_DEFAULT_SENSITIVITY
+#define HK_P_SET_S   HK_POINTER_SET_SNIPING_SENSITIVITY
 #define HK_P_SET_BUF HK_POINTER_SET_SCROLL_BUFFER
 #define HK_S_MODE    HK_SNIPING_MODE
 #define HK_S_MODE_T  HK_SNIPING_MODE_TOGGLE

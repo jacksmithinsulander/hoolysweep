@@ -54,7 +54,7 @@ static char to_1x(uint8_t x) {
     return x < 10 ? x + '0' : x + 'a' - 10;
 }
 
-static const char* format_multiplier(float f) {
+static const char* format_sensitivity(float f) {
     static char buf[10] = {0};
     if (f > 10 || f < -10) {
         sprintf(buf, "err");
@@ -78,23 +78,23 @@ void hk_oled_render_pointer_state(void) {
     oled_write(format_3d(g_hk_state.display.last_mouse.h), false);
     oled_write_ln(format_3d(g_hk_state.display.last_mouse.v), false);
 
-    // 2nd line, cursor mode, default multiplier, drag scroll mode, scroll lock mode, and scroll buffer size.
-    if (g_hk_state.setting_default_scale) {
+    // 2nd line, cursor mode, default sensitivity, drag scroll mode, scroll lock mode, and scroll buffer size.
+    if (g_hk_state.setting_default_sensitivity) {
         oled_write_P(PSTR("CUR D\xB1"), false);
-        oled_write(format_multiplier(g_hk_state.main.pointer_default_multiplier), false);
-    } else if (g_hk_state.setting_sniping_scale) {
+        oled_write(format_sensitivity(g_hk_state.main.pointer_default_sensitivity), false);
+    } else if (g_hk_state.setting_sniping_sensitivity) {
         oled_write_P(PSTR("CUR S\xB1"), false);
-        oled_write(format_multiplier(g_hk_state.main.pointer_sniping_multiplier), false);
+        oled_write(format_sensitivity(g_hk_state.main.pointer_sniping_sensitivity), false);
     } else {
         switch (g_hk_state.main.cursor_mode)
         {
             case CURSOR_MODE_DEFAULT:
                 oled_write_P(PSTR("CUR D\xB1"), false);
-                oled_write(format_multiplier(g_hk_state.main.pointer_default_multiplier), false);
+                oled_write(format_sensitivity(g_hk_state.main.pointer_default_sensitivity), false);
                 break;
             case CURSOR_MODE_SNIPING:
                 oled_write_P(PSTR("CUR S\xB1"), false);
-                oled_write(format_multiplier(g_hk_state.main.pointer_sniping_multiplier), false);
+                oled_write(format_sensitivity(g_hk_state.main.pointer_sniping_sensitivity), false);
                 break;
             default:
                 oled_write_P(PSTR("CUR ?\xB1"), false);

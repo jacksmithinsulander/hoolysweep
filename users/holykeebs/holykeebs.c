@@ -36,16 +36,16 @@ static void deserialize_eeconfig_to_state(const hk_eeprom_config_t* config) {
     g_hk_state.main.drag_scroll = config->pointing.main_drag_scroll;
     g_hk_state.main.scroll_lock = config->pointing.main_scroll_lock;
     g_hk_state.main.scroll_direction_inverted = config->pointing.main_scroll_direction_inverted;
-    g_hk_state.main.pointer_default_multiplier = config->pointing.main_default_multiplier / 100.0;
-    g_hk_state.main.pointer_sniping_multiplier = config->pointing.main_sniping_multiplier / 100.0;
+    g_hk_state.main.pointer_default_sensitivity = config->pointing.main_default_sensitivity / 100.0;
+    g_hk_state.main.pointer_sniping_sensitivity = config->pointing.main_sniping_sensitivity / 100.0;
     g_hk_state.main.pointer_scroll_buffer_size = config->pointing.main_scroll_buffer_size;
 
     g_hk_state.peripheral.cursor_mode = config->pointing.peripheral_cursor_mode;
     g_hk_state.peripheral.drag_scroll = config->pointing.peripheral_drag_scroll;
     g_hk_state.peripheral.scroll_lock = config->pointing.peripheral_scroll_lock;
     g_hk_state.peripheral.scroll_direction_inverted = config->pointing.peripheral_scroll_direction_inverted;
-    g_hk_state.peripheral.pointer_default_multiplier = config->pointing.peripheral_default_multiplier / 100.0;
-    g_hk_state.peripheral.pointer_sniping_multiplier = config->pointing.peripheral_sniping_multiplier / 100.0;
+    g_hk_state.peripheral.pointer_default_sensitivity = config->pointing.peripheral_default_sensitivity / 100.0;
+    g_hk_state.peripheral.pointer_sniping_sensitivity = config->pointing.peripheral_sniping_sensitivity / 100.0;
     g_hk_state.peripheral.pointer_scroll_buffer_size = config->pointing.peripheral_scroll_buffer_size;
 }
 
@@ -56,16 +56,16 @@ static void serialize_state_to_eeconfig(hk_eeprom_config_t* config) {
     config->pointing.main_drag_scroll = g_hk_state.main.drag_scroll;
     config->pointing.main_scroll_lock = g_hk_state.main.scroll_lock;
     config->pointing.main_scroll_direction_inverted = g_hk_state.main.scroll_direction_inverted;
-    config->pointing.main_default_multiplier = (int16_t)(g_hk_state.main.pointer_default_multiplier * 100);
-    config->pointing.main_sniping_multiplier = (int16_t)(g_hk_state.main.pointer_sniping_multiplier * 100);
+    config->pointing.main_default_sensitivity = (int16_t)(g_hk_state.main.pointer_default_sensitivity * 100);
+    config->pointing.main_sniping_sensitivity = (int16_t)(g_hk_state.main.pointer_sniping_sensitivity * 100);
     config->pointing.main_scroll_buffer_size = g_hk_state.main.pointer_scroll_buffer_size;
 
     config->pointing.peripheral_cursor_mode = g_hk_state.peripheral.cursor_mode;
     config->pointing.peripheral_drag_scroll = g_hk_state.peripheral.drag_scroll;
     config->pointing.peripheral_scroll_lock = g_hk_state.peripheral.scroll_lock;
     config->pointing.peripheral_scroll_direction_inverted = g_hk_state.peripheral.scroll_direction_inverted;
-    config->pointing.peripheral_default_multiplier = (int16_t)(g_hk_state.peripheral.pointer_default_multiplier * 100);
-    config->pointing.peripheral_sniping_multiplier = (int16_t)(g_hk_state.peripheral.pointer_sniping_multiplier * 100);
+    config->pointing.peripheral_default_sensitivity = (int16_t)(g_hk_state.peripheral.pointer_default_sensitivity * 100);
+    config->pointing.peripheral_sniping_sensitivity = (int16_t)(g_hk_state.peripheral.pointer_sniping_sensitivity * 100);
     config->pointing.peripheral_scroll_buffer_size = g_hk_state.peripheral.pointer_scroll_buffer_size;
 }
 
@@ -77,32 +77,32 @@ static void write_eeconfig(void) {
 }
 
 static void hk_configure_tps65_common(hk_pointer_state_t* state) {
-    state->pointer_default_multiplier = 1.25;
-    state->pointer_sniping_multiplier = 1.0;
+    state->pointer_default_sensitivity = 1.25;
+    state->pointer_sniping_sensitivity = 1.0;
     state->pointer_scroll_buffer_size = 5;
 }
 
 static void hk_configure_tps43_common(hk_pointer_state_t* state) {
-    state->pointer_default_multiplier = 1.25;
-    state->pointer_sniping_multiplier = 1.0;
+    state->pointer_default_sensitivity = 1.25;
+    state->pointer_sniping_sensitivity = 1.0;
     state->pointer_scroll_buffer_size = 5;
 }
 
 static void hk_configure_pimoroni_common(hk_pointer_state_t* state) {
-    state->pointer_default_multiplier = 1.5;
-    state->pointer_sniping_multiplier = 1.0;
+    state->pointer_default_sensitivity = 1.5;
+    state->pointer_sniping_sensitivity = 1.0;
     state->pointer_scroll_buffer_size = 1;
 }
 
 static void hk_configure_trackpoint_common(hk_pointer_state_t* state) {
-    state->pointer_default_multiplier = 2.0;
-    state->pointer_sniping_multiplier = 1.0;
+    state->pointer_default_sensitivity = 2.0;
+    state->pointer_sniping_sensitivity = 1.0;
     state->pointer_scroll_buffer_size = 5;
 }
 
 static void hk_configure_cirque_common(hk_pointer_state_t* state) {
-    state->pointer_default_multiplier = 1.0;
-    state->pointer_sniping_multiplier = 1.0;
+    state->pointer_default_sensitivity = 1.0;
+    state->pointer_sniping_sensitivity = 1.0;
 }
 
 static hk_state_t init_state(void) {
@@ -111,8 +111,8 @@ static hk_state_t init_state(void) {
         .init = true,
         .dirty = false,
         .is_main_side = is_keyboard_master(),
-        .setting_default_scale = false,
-        .setting_sniping_scale = false,
+        .setting_default_sensitivity = false,
+        .setting_sniping_sensitivity = false,
         .setting_scroll_buffer = false,
         .main = {
             .pointer_kind = POINTER_KIND_NONE,
@@ -120,8 +120,8 @@ static hk_state_t init_state(void) {
             .drag_scroll = false,
             .scroll_lock = SCROLL_LOCK_OFF,
             .scroll_direction_inverted = false,
-            .pointer_default_multiplier = 0,
-            .pointer_sniping_multiplier = 0,
+            .pointer_default_sensitivity = 0,
+            .pointer_sniping_sensitivity = 0,
             .pointer_scroll_buffer_size = 0,
         },
         .peripheral = {
@@ -130,8 +130,8 @@ static hk_state_t init_state(void) {
             .drag_scroll = false,
             .scroll_lock = SCROLL_LOCK_OFF,
             .scroll_direction_inverted = false,
-            .pointer_default_multiplier = 0,
-            .pointer_sniping_multiplier = 0,
+            .pointer_default_sensitivity = 0,
+            .pointer_sniping_sensitivity = 0,
             .pointer_scroll_buffer_size = 0,
         },
         .display = {
@@ -207,11 +207,11 @@ static hk_state_t init_state(void) {
     // Overrides the defaults for the case where the desired value is already known by the user. This only gets set
     // if there's nothing saved in eeprom.
     if (state.main.pointer_kind) {
-        #ifdef HK_MAIN_DEFAULT_POINTER_DEFAULT_MULTIPLIER
-            state.main.pointer_default_multiplier = HK_MAIN_DEFAULT_POINTER_DEFAULT_MULTIPLIER;
+        #ifdef HK_MAIN_DEFAULT_POINTER_DEFAULT_SENSITIVITY
+            state.main.pointer_default_sensitivity = HK_MAIN_DEFAULT_POINTER_DEFAULT_SENSITIVITY;
         #endif
-        #ifdef HK_MAIN_DEFAULT_POINTER_SNIPING_MULTIPLIER
-            state.main.pointer_sniping_multiplier = HK_MAIN_DEFAULT_POINTER_SNIPING_MULTIPLIER;
+        #ifdef HK_MAIN_DEFAULT_POINTER_SNIPING_SENSITIVITY
+            state.main.pointer_sniping_sensitivity = HK_MAIN_DEFAULT_POINTER_SNIPING_SENSITIVITY;
         #endif
         #ifdef HK_MAIN_DEFAULT_POINTER_SCROLL_BUFFER_SIZE
             state.main.pointer_scroll_buffer_size = HK_MAIN_DEFAULT_POINTER_SCROLL_BUFFER_SIZE;
@@ -241,11 +241,11 @@ static hk_state_t init_state(void) {
 
         // Overrides the defaults for the case where the desired value is already known by the user. This only gets set
         // if there's nothing saved in eeprom.
-        #ifdef HK_PERIPHERAL_DEFAULT_POINTER_DEFAULT_MULTIPLIER
-            state.peripheral.pointer_default_multiplier = HK_PERIPHERAL_DEFAULT_POINTER_DEFAULT_MULTIPLIER;
+        #ifdef HK_PERIPHERAL_DEFAULT_POINTER_DEFAULT_SENSITIVITY
+            state.peripheral.pointer_default_sensitivity = HK_PERIPHERAL_DEFAULT_POINTER_DEFAULT_SENSITIVITY;
         #endif
-        #ifdef HK_PERIPHERAL_DEFAULT_POINTER_SNIPING_MULTIPLIER
-            state.peripheral.pointer_sniping_multiplier = HK_PERIPHERAL_DEFAULT_POINTER_SNIPING_MULTIPLIER;
+        #ifdef HK_PERIPHERAL_DEFAULT_POINTER_SNIPING_SENSITIVITY
+            state.peripheral.pointer_sniping_sensitivity = HK_PERIPHERAL_DEFAULT_POINTER_SNIPING_SENSITIVITY;
         #endif
         #ifdef HK_PERIPHERAL_DEFAULT_POINTER_SCROLL_BUFFER_SIZE
             state.peripheral.pointer_scroll_buffer_size = HK_PERIPHERAL_DEFAULT_POINTER_SCROLL_BUFFER_SIZE;
@@ -359,20 +359,20 @@ static void hk_set_dragscroll(bool enabled, bool side_peripheral) {
 }
 
 static float scale_movement(const hk_pointer_state_t* state, int32_t amount) {
-    float multiplier = 1;
+    float sensitivity = 1;
     switch (state->cursor_mode) {
         case CURSOR_MODE_DEFAULT:
-            multiplier = state->pointer_default_multiplier;
+            sensitivity = state->pointer_default_sensitivity;
             break;
         case CURSOR_MODE_SNIPING:
-            multiplier = state->pointer_sniping_multiplier;
+            sensitivity = state->pointer_sniping_sensitivity;
             break;
     }
 
-    return amount * multiplier;
+    return amount * sensitivity;
 }
 
-static float hk_pointer_scale_step(const hk_pointer_state_t* state) {
+static float hk_pointer_sensitivity_step(const hk_pointer_state_t* state) {
     switch (state->pointer_kind) {
         case POINTER_KIND_PIMORONI_TRACKBALL:
             return .1;
@@ -391,22 +391,22 @@ static float hk_pointer_scale_step(const hk_pointer_state_t* state) {
     }
 }
 
-static void hk_cycle_pointer_default_multiplier(bool forward, bool side_peripheral) {
+static void hk_cycle_pointer_default_sensitivity(bool forward, bool side_peripheral) {
     hk_pointer_state_t* state = side_peripheral ? &g_hk_state.peripheral : &g_hk_state.main;
-    float step = hk_pointer_scale_step(state);
-    float new_value = forward ? state->pointer_default_multiplier + step : state->pointer_default_multiplier - step;
+    float step = hk_pointer_sensitivity_step(state);
+    float new_value = forward ? state->pointer_default_sensitivity + step : state->pointer_default_sensitivity - step;
     if (new_value > 0) {
-        state->pointer_default_multiplier = new_value;
+        state->pointer_default_sensitivity = new_value;
         g_hk_state.dirty = true;
     }
 }
 
-static void hk_cycle_pointer_sniping_multiplier(bool forward, bool side_peripheral) {
+static void hk_cycle_pointer_sniping_sensitivity(bool forward, bool side_peripheral) {
     hk_pointer_state_t* state = side_peripheral ? &g_hk_state.peripheral : &g_hk_state.main;
-    float step = hk_pointer_scale_step(state);
-    float new_value = forward ? state->pointer_sniping_multiplier + step : state->pointer_sniping_multiplier - step;
+    float step = hk_pointer_sensitivity_step(state);
+    float new_value = forward ? state->pointer_sniping_sensitivity + step : state->pointer_sniping_sensitivity - step;
     if (new_value > 0) {
-        state->pointer_sniping_multiplier = new_value;
+        state->pointer_sniping_sensitivity = new_value;
         g_hk_state.dirty = true;
     }
 }
@@ -592,15 +592,15 @@ bool process_record_user(uint16_t keycode, keyrecord_t* record) {
             break;
         case KC_UP:
         case KC_DOWN:
-            if (!g_hk_state.setting_default_scale && !g_hk_state.setting_sniping_scale && !g_hk_state.setting_scroll_buffer) {
+            if (!g_hk_state.setting_default_sensitivity && !g_hk_state.setting_sniping_sensitivity && !g_hk_state.setting_scroll_buffer) {
                 break;
             }
             if (record->event.pressed) {
-                if (g_hk_state.setting_default_scale) {
-                    hk_cycle_pointer_default_multiplier(/*forward=*/keycode == KC_UP, /*side_peripheral=*/has_shift_mod());
+                if (g_hk_state.setting_default_sensitivity) {
+                    hk_cycle_pointer_default_sensitivity(/*forward=*/keycode == KC_UP, /*side_peripheral=*/has_shift_mod());
                 }
-                else if (g_hk_state.setting_sniping_scale) {
-                    hk_cycle_pointer_sniping_multiplier(/*forward=*/keycode == KC_UP, /*side_peripheral=*/has_shift_mod());
+                else if (g_hk_state.setting_sniping_sensitivity) {
+                    hk_cycle_pointer_sniping_sensitivity(/*forward=*/keycode == KC_UP, /*side_peripheral=*/has_shift_mod());
                 }
                 else if (g_hk_state.setting_scroll_buffer) {
                     hk_cycle_pointer_scroll_buffer(/*forward=*/keycode == KC_UP, /*side_peripheral=*/has_shift_mod());
@@ -609,12 +609,12 @@ bool process_record_user(uint16_t keycode, keyrecord_t* record) {
                 state_changed = true;
             }
             break;
-        case HK_POINTER_SET_DEFAULT_SCALER:
-            g_hk_state.setting_default_scale = record->event.pressed;
+        case HK_POINTER_SET_DEFAULT_SENSITIVITY:
+            g_hk_state.setting_default_sensitivity = record->event.pressed;
             // state_changed = true;
             break;
-        case HK_POINTER_SET_SNIPING_SCALER:
-            g_hk_state.setting_sniping_scale = record->event.pressed;
+        case HK_POINTER_SET_SNIPING_SENSITIVITY:
+            g_hk_state.setting_sniping_sensitivity = record->event.pressed;
             // state_changed = true;
             break;
         case HK_POINTER_SET_SCROLL_BUFFER:

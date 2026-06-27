@@ -31,8 +31,8 @@ typedef struct PACKED {
     hk_scroll_lock scroll_lock : 2;
     bool drag_scroll : 1;
     bool scroll_direction_inverted : 1;
-    float pointer_default_multiplier;
-    float pointer_sniping_multiplier;
+    float pointer_default_sensitivity;
+    float pointer_sniping_sensitivity;
     uint8_t pointer_scroll_buffer_size;
 } hk_pointer_state_t;
 
@@ -53,8 +53,8 @@ typedef struct PACKED {
     bool dirty : 1;
 
     bool is_main_side : 1;
-    bool setting_default_scale : 1;
-    bool setting_sniping_scale : 1;
+    bool setting_default_sensitivity : 1;
+    bool setting_sniping_sensitivity : 1;
     bool setting_scroll_buffer : 1;
 
     hk_pointer_state_t main;
