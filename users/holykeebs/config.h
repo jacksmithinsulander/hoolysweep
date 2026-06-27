@@ -173,6 +173,16 @@
     #define HK_SPLIT_SYNC_STATE
 #endif
 
+// keyball61plus is built dual-PMW3360 combined, but may be physically populated
+// with a ball on one side, the other, or both. The PMW3360 self-reports init
+// success, so the installed sides are detected at runtime (one image covers
+// every population) rather than chosen at build time. The detected combination
+// is handed to the keymap via hk_pointing_devices_detected_keymap (e.g. to drive
+// the VIA "Ball availability" layout option).
+#if defined(HK_POINTING_DEVICE_LEFT_PMW3360) && defined(HK_POINTING_DEVICE_RIGHT_PMW3360)
+    #define HK_SPLIT_DETECT_POINTING
+#endif
+
 #ifdef HK_OLED_ENABLE
 #    define OLED_FONT_H "users/holykeebs/logofont/logofont.c"
 #    define OLED_FONT_START 32
@@ -181,8 +191,19 @@
 
 #ifdef HK_SPLIT_SYNC_STATE
     #define SPLIT_LAYER_STATE_ENABLE
-    #define SPLIT_TRANSACTION_IDS_USER HK_SYNC_STATE
     #define RPC_M2S_BUFFER_SIZE 64
+#endif
+
+// Assemble the user split transaction id list from whichever split features are
+// enabled. HK_SYNC_STATE (master->peripheral state sync, OLED) and
+// HK_GET_POINTING_INFO (peripheral->master pointing presence, ball detection)
+// are independent, so any combination is valid.
+#if defined(HK_SPLIT_SYNC_STATE) && defined(HK_SPLIT_DETECT_POINTING)
+    #define SPLIT_TRANSACTION_IDS_USER HK_SYNC_STATE, HK_GET_POINTING_INFO
+#elif defined(HK_SPLIT_SYNC_STATE)
+    #define SPLIT_TRANSACTION_IDS_USER HK_SYNC_STATE
+#elif defined(HK_SPLIT_DETECT_POINTING)
+    #define SPLIT_TRANSACTION_IDS_USER HK_GET_POINTING_INFO
 #endif
 
 // Restores VIA key tester matrix readout disabled by qmk/qmk_firmware#25414.

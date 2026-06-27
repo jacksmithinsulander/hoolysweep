@@ -15,7 +15,7 @@
 #include "hk_debug.h"
 #include "eeprom_config.h"
 
-#ifdef HK_SPLIT_SYNC_STATE
+#if defined(HK_SPLIT_SYNC_STATE) || defined(HK_SPLIT_DETECT_POINTING)
 #include "rpc.h"
 #include "transactions.h"
 #endif
@@ -746,7 +746,55 @@ bool process_record_user(uint16_t keycode, keyrecord_t* record) {
 
 __attribute__((weak)) void keyboard_post_init_keymap(void) {}
 
+__attribute__((weak)) void hk_pointing_devices_detected_keymap(bool left_has_pointing, bool right_has_pointing) {
+    (void)left_has_pointing;
+    (void)right_has_pointing;
+}
+
+#ifdef HK_SPLIT_DETECT_POINTING
+#define HK_DETECT_POINTING_INTERVAL 500
+#define HK_DETECT_POINTING_MAXTRY 10
+
+// Master-side: pull the peripheral's pointing-device presence over a split RPC,
+// retrying until it answers (it may not be up at boot). Once known, combine it
+// with this side's own status and hand the left/right result to the keymap. Runs
+// once; mirrors the keyball KEYBALL_GET_INFO negotiation.
+static void hk_detect_pointing_invoke(void) {
+    static bool     negotiated = false;
+    static uint32_t last       = 0;
+    static int      round      = 0;
+    if (negotiated || timer_elapsed32(last) < HK_DETECT_POINTING_INTERVAL) {
+        return;
+    }
+    last = timer_read32();
+    round++;
+
+    hk_pointing_info_t recv = {0};
+    if (!transaction_rpc_exec(HK_GET_POINTING_INFO, 0, NULL, sizeof(recv), &recv)) {
+        if (round < HK_DETECT_POINTING_MAXTRY) {
+            printf("hk_detect_pointing_invoke: missed #%d\n", round);
+            return;
+        }
+        printf("hk_detect_pointing_invoke: giving up after #%d, assuming peripheral has no pointing device\n", round);
+    }
+    negotiated = true;
+
+    bool this_have  = pointing_device_get_status() == POINTING_DEVICE_STATUS_SUCCESS;
+    bool that_have  = recv.have_pointing;
+    bool left_have  = is_keyboard_left() ? this_have : that_have;
+    bool right_have = is_keyboard_left() ? that_have : this_have;
+    printf("hk_detect_pointing_invoke: negotiated #%d left=%d right=%d\n", round, left_have, right_have);
+    hk_pointing_devices_detected_keymap(left_have, right_have);
+}
+#endif
+
 void housekeeping_task_user(void) {
+#ifdef HK_SPLIT_DETECT_POINTING
+    if (is_keyboard_master()) {
+        hk_detect_pointing_invoke();
+    }
+#endif
+
 #ifdef HK_SPLIT_SYNC_STATE
     if (is_keyboard_master()) {
         static uint32_t last_sync = 0;
@@ -798,6 +846,9 @@ void keyboard_post_init_user(void) {
     if (!is_keyboard_master()) {
         #ifdef HK_SPLIT_SYNC_STATE
             transaction_register_rpc(HK_SYNC_STATE, hk_rpc_sync_state);
+        #endif
+        #ifdef HK_SPLIT_DETECT_POINTING
+            transaction_register_rpc(HK_GET_POINTING_INFO, hk_rpc_get_pointing_info);
         #endif
 
         keyboard_post_init_keymap();

@@ -62,5 +62,11 @@ enum hk_keycodes {
 #define HK_C_SCROLL  HK_CYCLE_SCROLL_LOCK
 #define HK_I_SCROLL  HK_INVERT_SCROLL_DIRECTION
 
+// Called once on the master after the split pointing-device presence has been
+// negotiated (boards with runtime ball detection only). Lets the keymap reflect
+// the detected combination, e.g. into the VIA "Ball availability" layout option.
+// Weak default is a no-op.
+void hk_pointing_devices_detected_keymap(bool left_has_pointing, bool right_has_pointing);
+
 // #define ENABLE_DRIFT_DETECTION
 // #define ENABLE_PIMORONI_ADAPTIVE_MOTION
