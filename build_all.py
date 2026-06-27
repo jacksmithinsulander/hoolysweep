@@ -200,6 +200,12 @@ def main() -> int:
                         help='number of builds to run concurrently (default: %(default)s)')
     parser.add_argument('-j', '--jobs', type=int, default=0,
                         help='make jobs per build (default: cpu // parallel)')
+    parser.add_argument('--rebuild', action='store_true',
+                        help='rebuild every firmware, archiving existing outputs to '
+                             'previous/. Default skips configs already present in '
+                             'build_all/ (resume-friendly); note it does NOT detect '
+                             'stale outputs, so pass --rebuild to refresh after source '
+                             'changes.')
     args = parser.parse_args()
 
     parallel = max(1, args.parallel)
@@ -238,14 +244,35 @@ def main() -> int:
         for command in commands:
             commands_file.write(f'{command.file_name()}: {command.build()}\n')
 
-    total = len(commands)
+    # By default skip configs whose firmware already exists (resume after an abort);
+    # --rebuild forces a full rebuild, archiving the existing outputs to previous/.
+    # In skip mode nothing existing is touched, so previous/ is only populated by a
+    # full rebuild -- keeping the build dir stable unless you ask for a fresh one.
+    if args.rebuild:
+        to_build, skipped = commands, []
+    else:
+        to_build, skipped = [], []
+        for command in commands:
+            if os.path.exists(destination_for(base_dir, command.file_name())):
+                skipped.append(command)
+            else:
+                to_build.append(command)
+
+    if skipped:
+        print(f'Skipping {len(skipped)} firmware(s) already in {base_dir}/ '
+              f'(use --rebuild to force a full rebuild)')
+    if not to_build:
+        print(f'Nothing to build; all {len(commands)} firmwares present.')
+        return 0
+
+    total = len(to_build)
     print(f'Building {total} firmwares with {parallel} concurrent build(s) x '
           f'make -j{make_jobs} (detected {cpu} CPUs)')
 
     start = time.time()
     done = 0
     with ThreadPoolExecutor(max_workers=parallel) as executor:
-        futures = [executor.submit(run_build, c, base_dir) for c in commands]
+        futures = [executor.submit(run_build, c, base_dir) for c in to_build]
         try:
             for future in as_completed(futures):
                 file_name = future.result()  # re-raises BuildError on failure
@@ -259,7 +286,8 @@ def main() -> int:
             return 1
 
     elapsed = time.time() - start
-    print(f'\nAll {total} builds succeeded in {elapsed:.0f}s ({elapsed / 60:.1f} min)')
+    print(f'\nBuilt {total} firmwares in {elapsed:.0f}s ({elapsed / 60:.1f} min); '
+          f'{len(commands)} total present.')
     return 0
 
 if __name__ == '__main__':
