@@ -9,7 +9,8 @@
 #    define OLED_FONT_END 195
 #endif
 
-// This has been reported to help with recognizing the keyboard after booting up when its USB is already connected.
+#define USB_VBUS_PIN GP19
+
 #define SPLIT_WATCHDOG_ENABLE
 #define SPLIT_WATCHDOG_TIMEOUT 3000
 
