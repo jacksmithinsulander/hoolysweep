@@ -2,6 +2,7 @@ import sys
 import subprocess
 import os
 import argparse
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 class Command:
@@ -188,6 +189,11 @@ def run_build(command, base_dir):
     return file_name
 
 def main() -> int:
+    # Line-buffer stdout so the live progress feed is visible even when this runs
+    # in the background with stdout redirected to a file (block-buffered by default).
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(line_buffering=True)
+
     cpu = os.cpu_count() or 4
     parser = argparse.ArgumentParser(description='Build the holykeebs firmware matrix.')
     parser.add_argument('-p', '--parallel', type=int, default=max(1, cpu // 4),
@@ -236,6 +242,7 @@ def main() -> int:
     print(f'Building {total} firmwares with {parallel} concurrent build(s) x '
           f'make -j{make_jobs} (detected {cpu} CPUs)')
 
+    start = time.time()
     done = 0
     with ThreadPoolExecutor(max_workers=parallel) as executor:
         futures = [executor.submit(run_build, c, base_dir) for c in commands]
@@ -243,14 +250,16 @@ def main() -> int:
             for future in as_completed(futures):
                 file_name = future.result()  # re-raises BuildError on failure
                 done += 1
-                print(f'[{done}/{total}] OK {file_name}')
+                print(f'[{done}/{total}] OK {file_name}  ({time.time() - start:.0f}s)')
         except BuildError as err:
             for future in futures:
                 future.cancel()
-            print(f'\nBuild failed: {err.file_name}: {err} (see {err.log_path})')
+            print(f'\nBuild failed after {time.time() - start:.0f}s: '
+                  f'{err.file_name}: {err} (see {err.log_path})')
             return 1
 
-    print(f'\nAll {total} builds succeeded.')
+    elapsed = time.time() - start
+    print(f'\nAll {total} builds succeeded in {elapsed:.0f}s ({elapsed / 60:.1f} min)')
     return 0
 
 if __name__ == '__main__':
