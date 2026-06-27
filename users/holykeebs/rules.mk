@@ -571,6 +571,7 @@ endif
 # report the runtime behavior in the summary.
 ifeq ($(strip $(KEYBOARD)), holykeebs/keyball61plus)
 	MSG_MASTER_SIDE = auto (USB; hand via matrix grid)
+	MSG_POINTING_DEVICE = dual PMW3360 trackball (runtime-detected)
 else ifeq ($(strip $(MASTER_SIDE)), left)
 	MSG_MASTER_SIDE = left
 	OPT_DEFS += -DHK_MASTER_LEFT

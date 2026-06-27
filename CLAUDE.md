@@ -47,11 +47,29 @@ error, you forgot `USER_NAME=holykeebs`.
 ### Keyboards and keymaps
 
 Boards driven by this userspace: `holykeebs/sweeq`, `holykeebs/spankbd`,
-`holykeebs/aztec42`, `crkbd/rev1`, `lily58/rev1`.
+`holykeebs/aztec42`, `holykeebs/keyball61plus`, `crkbd/rev1`, `lily58/rev1`.
 
 Keymap: use `hk` when a pointing device is present (it adds the pointer/scroll
 layer); `via` for a build with no pointing device. (Some boards, e.g. aztec42,
-use `default`/`vial` instead.)
+use `default`/`vial` instead; keyball61plus uses `via`/`default` — see below.)
+
+### keyball61plus (fixed dual PMW3360, runtime detection)
+
+Unlike the modular boards, `holykeebs/keyball61plus` takes **no `POINTING_DEVICE`
+var**. It's always built dual-PMW3360 combined; the board `rules.mk` declares the
+fixed pointing config, and the firmware detects at runtime which side(s) actually
+have a ball — one image covers left / right / dual — and updates the VIA "Ball
+availability" layout to match. Handedness comes from `SPLIT_HAND_MATRIX_GRID` and
+the master from USB/VBUS, so no master side is pinned and USB can go to either half.
+
+```
+make holykeebs/keyball61plus:via -e USER_NAME=holykeebs -e OLED=yes -e OLED_FLIP=yes
+```
+
+Keymaps: `via` (drives the dynamic ball layout) or `default`. `OLED=yes` shows the
+info panels on the master and the Keyball logo on the peripheral; `OLED_FLIP=yes`
+rotates the peripheral OLED (needed since it's one combined image). Hold the
+layer-3 thumb key to scroll.
 
 ### Build variables
 
@@ -70,6 +88,9 @@ use `default`/`vial` instead.)
 
 The master/peripheral side is derived automatically (`rules.mk` sets
 `MASTER_SIDE` → `HK_MASTER_LEFT`/`HK_MASTER_RIGHT`); don't set it by hand.
+keyball61plus is the exception: it resolves handedness from its matrix grid and
+the master from USB, so no master side is pinned (the userspace skips the forced
+`MASTER_*` when the board has its own `SPLIT_HAND_MATRIX_GRID`).
 
 ### Bulk builds
 
