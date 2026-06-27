@@ -62,6 +62,11 @@ enum hk_keycodes {
 #define HK_C_SCROLL  HK_CYCLE_SCROLL_LOCK
 #define HK_I_SCROLL  HK_INVERT_SCROLL_DIRECTION
 
+// Sets drag-scroll on both halves at once. Use from a layer hook to put the
+// ball(s) into scroll mode while a layer is held (keyball-style: hold the layer,
+// the ball scrolls).
+void hk_set_dragscroll_both(bool enabled);
+
 // Called once on the master after the split pointing-device presence has been
 // negotiated (boards with runtime ball detection only). Lets the keymap reflect
 // the detected combination, e.g. into the VIA "Ball availability" layout option.

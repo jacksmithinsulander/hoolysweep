@@ -401,6 +401,15 @@ static void hk_set_dragscroll(bool enabled, bool side_peripheral) {
     g_hk_state.dirty = true;
 }
 
+// Sets drag-scroll on both halves at once. Intended for a layer hook that puts
+// the ball(s) into scroll mode while a layer is held (keyball parity), so it
+// works regardless of which side the ball is on. Like HK_D_MODE it overrides the
+// persistent drag_scroll while active.
+void hk_set_dragscroll_both(bool enabled) {
+    hk_set_dragscroll(enabled, /*side_peripheral=*/false);
+    hk_set_dragscroll(enabled, /*side_peripheral=*/true);
+}
+
 static float scale_movement(const hk_pointer_state_t* state, int32_t amount) {
     if (uses_hw_cpi(state->pointer_kind)) {
         // The sensor already scaled the motion by its CPI, so pass it through.
