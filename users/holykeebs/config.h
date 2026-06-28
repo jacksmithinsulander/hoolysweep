@@ -206,6 +206,11 @@
     #define SPLIT_TRANSACTION_IDS_USER HK_GET_POINTING_INFO
 #endif
 
-// Restores VIA key tester matrix readout disabled by qmk/qmk_firmware#25414.
-// TODO: consider switching to SECURE_ENABLE for a safer unlock-based approach.
+// Keep the key/matrix tester always available, accepting the keylogger exposure
+// that implies. Each fork honors only the token for the protocol it compiles:
+// VIA_INSECURE restores the matrix readout disabled by qmk/qmk_firmware#25414;
+// VIAL_INSECURE skips Vial's unlock combo. The other is an inert, unused define.
+// TODO: consider the safer unlock-based approach instead (SECURE_ENABLE on VIA,
+// the VIAL_UNLOCK_COMBO on Vial).
 #define VIA_INSECURE
+#define VIAL_INSECURE
