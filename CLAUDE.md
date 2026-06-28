@@ -5,10 +5,30 @@ documents the holykeebs-specific build workflow.
 
 ## Compiling a holykeebs keyboard
 
-This fork carries the `users/holykeebs` userspace, which implements the pointing
-device handling (Pimoroni trackball, TrackPoint, Cirque, Azoteq TPS), sniping,
-drag-scroll, scroll lock, OLED, EEPROM config, and split state sync. Boards
-select behavior at build time via `-e VAR=value` flags.
+This fork's keyboards are driven by the `users/holykeebs` userspace, which
+implements the pointing device handling (Pimoroni trackball, TrackPoint, Cirque,
+Azoteq TPS, PMW3360), sniping, drag-scroll, scroll lock, OLED, EEPROM config, and
+split state sync. Boards select behavior at build time via `-e VAR=value` flags.
+
+### The userspace is an external overlay (one-time setup)
+
+`users/holykeebs` is **not committed to this repo**. It's the single source of
+truth shared with the vial-qmk fork, kept in a separate [QMK External Userspace](
+https://docs.qmk.fm/newbs_external_userspace) overlay repo at
+`../holykeebs-userspace` (where `users/holykeebs/` actually lives).
+
+Point the `qmk` CLI at it once — the setting is global, so it applies to every
+fork you build:
+
+```
+qmk config user.overlay_dir="/home/idank/dev/qmk/holykeebs-userspace"
+```
+
+The build prefers `<overlay>/users/holykeebs` over any in-tree copy. If the
+overlay isn't configured, builds fail loudly with
+`fatal error: users/holykeebs/holykeebs.h: No such file or directory` — set
+`user.overlay_dir` (or prefix the build with `QMK_USERSPACE=/path make ...`).
+Edit the userspace in the overlay repo, not here.
 
 ### Command form
 
