@@ -27,6 +27,12 @@ POINTING_DEVICE_DRIVER = pmw3360
 OPT_DEFS += -DHK_POINTING_DEVICE_LEFT_PMW3360 -DHK_POINTING_DEVICE_RIGHT_PMW3360
 OPT_DEFS += -DSPLIT_POINTING_ENABLE -DPOINTING_DEVICE_COMBINED
 
+# High-resolution (sub-line) scrolling on by default. The board is wired for it
+# (MOUSEKEY_WHEEL_DELTA 120 in config.h), and it gives the proportional, smooth
+# scroll the trackball expects — the holykeebs scroll buffer becomes a divisor
+# (resolution/size) instead of the coarser fixed ±1-per-report debounce.
+OPT_DEFS += -DHK_HIRES_SCROLL
+
 MOUSEKEY_ENABLE = yes
 
 # Rotary encoder (one per side, declared in keyboard.json).

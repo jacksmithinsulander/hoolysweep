@@ -68,8 +68,9 @@ make holykeebs/keyball61plus:via -e USER_NAME=holykeebs -e OLED=yes -e OLED_FLIP
 
 Keymaps: `via` (drives the dynamic ball layout) or `default`. `OLED=yes` shows the
 info panels on the master and the Keyball logo on the peripheral; `OLED_FLIP=yes`
-rotates the peripheral OLED (needed since it's one combined image). Hold the
-layer-3 thumb key to scroll.
+rotates the peripheral OLED (needed since it's one combined image). Hires scroll is
+**on by default** for this board (its `rules.mk` forces `HK_HIRES_SCROLL`; the board
+is wired for it). Hold the layer-3 thumb key to scroll.
 
 ### Build variables
 
