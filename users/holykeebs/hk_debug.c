@@ -62,7 +62,7 @@ void debug_hk_state_to_console(hk_state_t* state) {
                 "\tis_main_side=%u\n"
                 "\tsetting_default_sensitivity=%u\n"
                 "\tsetting_sniping_sensitivity=%u\n"
-                "\tsetting_scroll_buffer=%u\n"
+                "\tsetting_scroll_throttle=%u\n"
                 "\tmain=\n"
                 "\t{\n"
                 "\t\tpointer_kind=%s\n"
@@ -72,7 +72,7 @@ void debug_hk_state_to_console(hk_state_t* state) {
                 "\t\tscroll_direction_inverted=%u\n"
                 "\t\tpointer_default_sensitivity=%.2f\n"
                 "\t\tpointer_sniping_sensitivity=%.2f\n"
-                "\t\tpointer_scroll_buffer_size=%u\n"
+                "\t\tpointer_scroll_throttle=%u\n"
                 "\t}\n"
                 "\tperipheral=\n"
                 "\t{\n"
@@ -83,14 +83,14 @@ void debug_hk_state_to_console(hk_state_t* state) {
                 "\t\tscroll_direction_inverted=%u\n"
                 "\t\tpointer_default_sensitivity=%.2f\n"
                 "\t\tpointer_sniping_sensitivity=%.2f\n"
-                "\t\tpointer_scroll_buffer_size=%u\n"
+                "\t\tpointer_scroll_throttle=%u\n"
                 "\t}\n"
                 "}\n",
-                state->is_main_side, state->setting_default_sensitivity, state->setting_sniping_sensitivity, state->setting_scroll_buffer,
+                state->is_main_side, state->setting_default_sensitivity, state->setting_sniping_sensitivity, state->setting_scroll_throttle,
                 hk_pointer_kind_to_string(state->main.pointer_kind), hk_cursor_mode_to_string(state->main.cursor_mode), state->main.drag_scroll, hk_scroll_mode_to_string(state->main.scroll_lock), state->main.scroll_direction_inverted,
-                state->main.pointer_default_sensitivity, state->main.pointer_sniping_sensitivity, state->main.pointer_scroll_buffer_size,
+                state->main.pointer_default_sensitivity, state->main.pointer_sniping_sensitivity, state->main.pointer_scroll_throttle,
                 hk_pointer_kind_to_string(state->peripheral.pointer_kind), hk_cursor_mode_to_string(state->peripheral.cursor_mode), state->peripheral.drag_scroll, hk_scroll_mode_to_string(state->peripheral.scroll_lock), state->peripheral.scroll_direction_inverted,
-                state->peripheral.pointer_default_sensitivity, state->peripheral.pointer_sniping_sensitivity, state->peripheral.pointer_scroll_buffer_size
+                state->peripheral.pointer_default_sensitivity, state->peripheral.pointer_sniping_sensitivity, state->peripheral.pointer_scroll_throttle
         );
     #    endif // CONSOLE_ENABLE
 }

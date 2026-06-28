@@ -14,7 +14,7 @@ typedef union PACKED {
             hk_scroll_lock main_scroll_lock : 2;
             int16_t main_default_sensitivity;
             int16_t main_sniping_sensitivity;
-            uint8_t main_scroll_buffer_size;
+            uint8_t main_scroll_throttle;
 
             hk_cursor_mode peripheral_cursor_mode : 2;
             bool peripheral_drag_scroll : 1;
@@ -22,7 +22,7 @@ typedef union PACKED {
             hk_scroll_lock peripheral_scroll_lock : 2;
             int16_t peripheral_default_sensitivity;
             int16_t peripheral_sniping_sensitivity;
-            uint8_t peripheral_scroll_buffer_size;
+            uint8_t peripheral_scroll_throttle;
         } pointing;
 
         bool check       : 1;

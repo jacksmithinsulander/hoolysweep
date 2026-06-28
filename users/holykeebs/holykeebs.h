@@ -24,10 +24,12 @@ enum hk_keycodes {
     HK_POINTER_SET_DEFAULT_SENSITIVITY, // 0x7E03
     HK_POINTER_SET_SNIPING_SENSITIVITY, // 0x7E04
 
-    // Sets the scroll buffer size. The buffer acccumulates x/y movements and outputs a h/v value when the thershold is reached.
+    // Sets the scroll throttle: how much ball travel maps to one unit of scroll
+    // (larger = slower). Realized as an accumulation threshold without hires
+    // scrolling, or as a speed divisor with it.
     //
-    // Hold this key and then press + or - to increase or decrease the buffer size.
-    HK_POINTER_SET_SCROLL_BUFFER, // 0x7E05
+    // Hold this key and then press + or - to increase or decrease the throttle.
+    HK_POINTER_SET_SCROLL_THROTTLE, // 0x7E05
 
     // Enters sniping mode.
     HK_SNIPING_MODE, // 0x7E06
@@ -64,7 +66,7 @@ enum hk_keycodes {
 #define HK_DUMP      HK_DUMP_SETTINGS
 #define HK_P_SET_D   HK_POINTER_SET_DEFAULT_SENSITIVITY
 #define HK_P_SET_S   HK_POINTER_SET_SNIPING_SENSITIVITY
-#define HK_P_SET_BUF HK_POINTER_SET_SCROLL_BUFFER
+#define HK_P_SET_THR HK_POINTER_SET_SCROLL_THROTTLE
 #define HK_S_MODE    HK_SNIPING_MODE
 #define HK_S_MODE_T  HK_SNIPING_MODE_TOGGLE
 #define HK_D_MODE    HK_DRAGSCROLL_MODE

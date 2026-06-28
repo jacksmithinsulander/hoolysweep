@@ -39,7 +39,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
   [3] = LAYOUT(
     QK_BOOT,  HK_DUMP,  HK_SAVE,  HK_RESET,  HK_C_SCROLL,                       KC_TRNS,    KC_TRNS,    KC_TRNS,    KC_TRNS,    QK_BOOT,
-    QK_C_EEPROM, HK_P_SET_D, HK_P_SET_S, HK_P_SET_BUF, HK_S_MODE_T,             KC_UP, KC_DOWN, KC_TRNS,   KC_TRNS, QK_C_EEPROM,
+    QK_C_EEPROM, HK_P_SET_D, HK_P_SET_S, HK_P_SET_THR, HK_S_MODE_T,             KC_UP, KC_DOWN, KC_TRNS,   KC_TRNS, QK_C_EEPROM,
     KC_LSFT, KC_TRNS, KC_TRNS, KC_TRNS, HK_D_MODE_T,                            KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS,
                                                         KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS
   )

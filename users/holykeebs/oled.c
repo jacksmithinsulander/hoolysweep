@@ -84,7 +84,7 @@ void hk_oled_render_pointer_state(void) {
     oled_write(format_3d(g_hk_state.display.last_mouse.h), false);
     oled_write_ln(format_3d(g_hk_state.display.last_mouse.v), false);
 
-    // 2nd line, cursor mode, default sensitivity, drag scroll mode, scroll lock mode, and scroll buffer size.
+    // 2nd line, cursor mode, default sensitivity, drag scroll mode, scroll lock mode, and scroll throttle.
     if (g_hk_state.setting_default_sensitivity) {
         oled_write_P(PSTR("CUR D\xB1"), false);
         oled_write(format_sensitivity(g_hk_state.main.pointer_default_sensitivity), false);
@@ -109,8 +109,8 @@ void hk_oled_render_pointer_state(void) {
     }
 
     oled_write_char('/', false);
-    // scroll buffer size:
-    oled_write(format_2d(g_hk_state.main.pointer_scroll_buffer_size), false);
+    // scroll throttle:
+    oled_write(format_2d(g_hk_state.main.pointer_scroll_throttle), false);
     oled_write_char(' ', false);
 
     // drag scroll mode: on/off

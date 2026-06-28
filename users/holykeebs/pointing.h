@@ -34,7 +34,7 @@ typedef struct PACKED {
     bool scroll_direction_inverted : 1;
     float pointer_default_sensitivity;
     float pointer_sniping_sensitivity;
-    uint8_t pointer_scroll_buffer_size;
+    uint8_t pointer_scroll_throttle;
 } hk_pointer_state_t;
 
 #define HK_OLED_MAX_PRESSING_KEYCODES 6
@@ -56,7 +56,7 @@ typedef struct PACKED {
     bool is_main_side : 1;
     bool setting_default_sensitivity : 1;
     bool setting_sniping_sensitivity : 1;
-    bool setting_scroll_buffer : 1;
+    bool setting_scroll_throttle : 1;
 
     hk_pointer_state_t main;
     hk_pointer_state_t peripheral;
