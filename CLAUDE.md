@@ -102,7 +102,7 @@ is wired for it). Hold the layer-3 thumb key to scroll.
 | `SIDE` | `left`, `right` | Required for dual (`<left>_<right>`) configs — build once per side. |
 | `OLED` | `yes` (holykeebs OLED: status + keylog), `stock` (plain QMK OLED) | Omit for none. |
 | `OLED_FLIP` | `yes` | Rotate the OLED 180° (peripheral side). |
-| `BONGO_ENABLE` | `yes` | Bongocat OLED animation (needs `OLED=yes`). |
+| `BONGO_ENABLE` | `no` | Bongocat OLED animation. Compiled into `OLED=yes` builds by default and toggled at runtime (`HK_BONGO_TOGGLE`; hold shift to target the peripheral); set `no` to drop it. Defaults to showing the info panels. |
 | `TRACKBALL_RGB_RAINBOW` | `yes` | Rainbow-cycle the Pimoroni trackball LED. |
 | `HIRES_SCROLL` | `yes` | High-resolution (sub-line) scrolling. |
 | `CONSOLE` | `yes` | Enable console for debug (`HK_DUMP`, `printf`). |
