@@ -223,14 +223,13 @@ def main() -> int:
     # keyball61plus runs on the holykeebs userspace but isn't part of the modular
     # POINTING_DEVICE matrix above: it's always built dual-PMW3360 combined (the
     # installed ball count is detected at runtime), so add its variants directly.
-    # The peripheral OLED is rotated via OLED_FLIP.
+    # The off-hand OLED is rotated 180° automatically by the userspace.
     for km in ('via', 'default'):
         for with_oled in (True, False):
             command = Command('holykeebs/keyball61plus', km)
             command.add_argument('USER_NAME=holykeebs')
             if with_oled:
                 command.oled = 'yes'
-                command.add_argument('OLED_FLIP=yes')
             commands.append(command)
 
     # Drop duplicate configurations. The console_enabled loop in build_commands()
