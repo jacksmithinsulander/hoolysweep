@@ -3,7 +3,10 @@ import subprocess
 import os
 import argparse
 import time
+from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
+
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 class Command:
     def __init__(self, kb, km) -> None:
@@ -188,6 +191,55 @@ def run_build(command, base_dir):
     os.rename(f'{file_name}.uf2', destination)
     return file_name
 
+def _repo_state(repo_dir):
+    """'<branch>  <short-hash>[ (dirty)]' for repo_dir, or None if it can't be
+    determined (missing dir, not a git repo, git unavailable). Untracked files
+    don't count as dirty."""
+    def git(*args):
+        return subprocess.run(['git', '-C', repo_dir, *args],
+                              capture_output=True, text=True, check=True).stdout.strip()
+    try:
+        branch = git('rev-parse', '--abbrev-ref', 'HEAD')
+        short = git('rev-parse', '--short', 'HEAD')
+        dirty = git('status', '--porcelain', '--untracked-files=no')
+    except Exception:
+        return None
+    return f'{branch}  {short}' + (' (dirty)' if dirty else '')
+
+def _overlay_dir():
+    """Where the holykeebs userspace overlay lives: QMK_USERSPACE env, else the
+    global `qmk config user.overlay_dir`. None if neither is set."""
+    env = os.environ.get('QMK_USERSPACE')
+    if env:
+        return env
+    try:
+        out = subprocess.run(['qmk', 'config', 'user.overlay_dir'],
+                             capture_output=True, text=True, check=True).stdout.strip()
+    except Exception:
+        return None
+    val = out.split('=', 1)[1].strip() if '=' in out else ''
+    return val if val and val != 'None' else None
+
+def commands_preamble():
+    """Comment-line preamble recording the source state these builds came from: a
+    timestamp and each contributing repo's branch + short hash (+ dirty). A
+    holykeebs firmware is compiled from this tree plus the external overlay, so
+    both are reported. Repos that can't be resolved are skipped, never fatal."""
+    def row(label, value):
+        return f'# {(label + ":"):<21}{value}'
+    lines = ['# build_all command list',
+             row('generated', datetime.now().strftime('%Y-%m-%d %H:%M:%S'))]
+    qmk = _repo_state(_SCRIPT_DIR)
+    if qmk:
+        lines.append(row('qmk_firmware', qmk))
+    overlay = _overlay_dir()
+    if overlay:
+        state = _repo_state(overlay)
+        if state:
+            lines.append(row('holykeebs-userspace', state))
+    lines.append('#')
+    return '\n'.join(lines) + '\n'
+
 def main() -> int:
     # Line-buffer stdout so the live progress feed is visible even when this runs
     # in the background with stdout redirected to a file (block-buffered by default).
@@ -253,6 +305,7 @@ def main() -> int:
         finalize_command(command, make_jobs, parallel)
 
     with open(f'{base_dir}/commands.txt', 'w') as commands_file:
+        commands_file.write(commands_preamble())
         for command in commands:
             commands_file.write(f'{command.file_name()}: {command.build()}\n')
 
