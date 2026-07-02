@@ -87,8 +87,7 @@ make holykeebs/keyball61plus:via -e USER_NAME=holykeebs -e OLED=yes
 ```
 
 Keymaps: `via` (drives the dynamic ball layout) or `default`. `OLED=yes` shows the
-info panels on the master and the Keyball logo on the peripheral; the off-hand OLED
-is rotated 180° automatically (no flag needed). Hires scroll is
+info panels on the master and the Keyball logo on the peripheral. Hires scroll is
 **on by default** for this board (its `rules.mk` forces `HK_HIRES_SCROLL`; the board
 is wired for it). Hold the layer-3 thumb key to scroll.
 
@@ -101,7 +100,7 @@ is wired for it). Hold the layer-3 thumb key to scroll.
 | `POINTING_DEVICE_POSITION` | `right`, `left`, `thumb`, `thumb_inner`, `thumb_outer`, `middle` | Where the (single) device sits. |
 | `SIDE` | `left`, `right` | Required for dual (`<left>_<right>`) configs — build once per side. |
 | `OLED` | `yes` (holykeebs OLED: status + keylog), `stock` (plain QMK OLED) | Omit for none. |
-| `OLED_FLIP` | `yes` | Stock-OLED keymaps only: render the status panel on the off-hand half instead of the master. No effect with `OLED=yes` (the holykeebs OLED renders both halves and rotates the off-hand 180° automatically). |
+| `OLED_FLIP` | `yes` | Stock-OLED keymaps only: render the status panel on the off-hand half instead of the master. No effect with `OLED=yes` (the holykeebs OLED renders both halves at the driver's base rotation — all these boards mount both halves' OLEDs the same way, so no flip is needed or applied). |
 | `BONGO_ENABLE` | `no` | Bongocat OLED animation. Compiled into `OLED=yes` builds by default and toggled at runtime (`HK_BONGO_TOGGLE`; hold shift to target the peripheral); set `no` to drop it. Defaults to showing the info panels. |
 | `TRACKBALL_RGB_RAINBOW` | `yes` | Rainbow-cycle the Pimoroni trackball LED. |
 | `HIRES_SCROLL` | `yes` | High-resolution (sub-line) scrolling. |
