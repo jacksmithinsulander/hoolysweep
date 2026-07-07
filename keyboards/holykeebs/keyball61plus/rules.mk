@@ -1,3 +1,9 @@
+# This board is driven by the holykeebs userspace; every keymap needs it. Set it
+# here so bare builds (and CI's qmk mass-compile, which passes no -e vars) work.
+# Without it USER_NAME defaults to the keymap name and the userspace sources are
+# silently left out, failing at link on the hk_* symbols the board code uses.
+USER_NAME = holykeebs
+
 # Build Options
 BOOTMAGIC_ENABLE = no       # Enable Bootmagic Lite
 EXTRAKEY_ENABLE = yes       # Audio control and System control
