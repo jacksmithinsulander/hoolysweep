@@ -311,9 +311,16 @@ __attribute__((weak)) bool pointing_device_task(void) {
     last_exec = timer_read32();
 #endif
 
+#if defined(SPLIT_POINTING_ENABLE) && defined(POINTING_DEVICE_COMBINED)
+    // In combined mode the status only reflects this half's sensor; a failed
+    // local init must not block the other half's report, so only the local
+    // read below is skipped (keyball-style boards ship one image and detect
+    // at runtime which halves actually have a sensor).
+#else
     if (pointing_device_get_status() != POINTING_DEVICE_STATUS_SUCCESS) {
         return false;
     }
+#endif
 
     // Gather report info
 #ifdef POINTING_DEVICE_MOTION_PIN
@@ -332,8 +339,10 @@ __attribute__((weak)) bool pointing_device_task(void) {
 #    if defined(POINTING_DEVICE_COMBINED)
         static uint8_t old_buttons = 0;
         local_mouse_report.buttons = old_buttons;
-        local_mouse_report         = pointing_device_driver->get_report(local_mouse_report);
-        old_buttons                = local_mouse_report.buttons;
+        if (pointing_device_get_status() == POINTING_DEVICE_STATUS_SUCCESS) {
+            local_mouse_report = pointing_device_driver->get_report(local_mouse_report);
+        }
+        old_buttons = local_mouse_report.buttons;
 #    elif defined(POINTING_DEVICE_LEFT) || defined(POINTING_DEVICE_RIGHT)
         local_mouse_report = POINTING_DEVICE_THIS_SIDE ? pointing_device_driver->get_report(local_mouse_report) : shared_mouse_report;
 #    else

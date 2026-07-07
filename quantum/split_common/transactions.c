@@ -761,7 +761,13 @@ static void pointing_handlers_slave(matrix_row_t master_matrix[], matrix_row_t s
         pointing_device_driver->set_cpi(pointing.cpi);
     }
 
-    pointing.report = pointing_device_driver->get_report((report_mouse_t){0});
+    // A half whose sensor failed init (e.g. no ball installed on a combined
+    // board) must sync an empty report, not whatever a dead bus reads back.
+    if (pointing_device_get_status() == POINTING_DEVICE_STATUS_SUCCESS) {
+        pointing.report = pointing_device_driver->get_report((report_mouse_t){0});
+    } else {
+        pointing.report = (report_mouse_t){0};
+    }
     // Now update the checksum given that the pointing has been written to
     pointing.checksum = crc8(&pointing.report, sizeof(report_mouse_t));
 
