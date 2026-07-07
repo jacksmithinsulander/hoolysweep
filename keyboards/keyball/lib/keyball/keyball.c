@@ -204,18 +204,14 @@ __attribute__((weak)) void keyball_on_apply_motion_to_mouse_scroll(report_mouse_
     report->y = my;
 #endif
 
-    // apply to mouse report.
-#if KEYBALL_MODEL == 61 || KEYBALL_MODEL == 39 || KEYBALL_MODEL == 147 || KEYBALL_MODEL == 44
-    output->h = -x;
-    output->v = y;
-    if (is_left) {
-        output->h = -output->h;
-        output->v = -output->v;
-    }
-
-#else
-#    error("unknown Keyball model")
-#endif
+    // apply to mouse report. The input is already in screen coordinates
+    // (+x right, +y down) — the core rotation/invert defines normalize both
+    // halves before this hook runs — while wheel semantics are +v up, +h
+    // right. So flip y for v and take x as-is for h, with no per-side
+    // adjustment.
+    output->h = x;
+    output->v = -y;
+    (void)is_left;
 
     // Scroll snapping
 #if KEYBALL_SCROLLSNAP_ENABLE == 1
