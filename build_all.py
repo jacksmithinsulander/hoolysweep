@@ -2,11 +2,26 @@ import sys
 import subprocess
 import os
 import argparse
+import json
 import time
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# --publish target: the rolling release the docs link to.
+PUBLISH_REPO = 'holykeebs/qmk_compiled'
+PUBLISH_TAG = 'latest'
+# The branch a publish must be built from, in both this repo and the overlay.
+PUBLISH_BRANCH = 'hk-master'
+# Release assets built outside this matrix (from separate forks) and uploaded by
+# hand. The prune step leaves these alone instead of deleting them.
+PRESERVED_ASSETS = {
+    'tarohayashi_killerwhale_duo_default.uf2',
+}
+# Uploading hundreds of assets in one gh invocation works but reports nothing
+# until the end; chunking gives progress and retry granularity.
+UPLOAD_CHUNK = 50
 
 class Command:
     def __init__(self, kb, km) -> None:
@@ -240,29 +255,111 @@ def commands_preamble():
     lines.append('#')
     return '\n'.join(lines) + '\n'
 
-def main() -> int:
-    # Line-buffer stdout so the live progress feed is visible even when this runs
-    # in the background with stdout redirected to a file (block-buffered by default).
-    if hasattr(sys.stdout, 'reconfigure'):
-        sys.stdout.reconfigure(line_buffering=True)
+def _publish_repo_problems(repo_dir, label):
+    """Problems that make repo_dir unfit to publish from: wrong branch, dirty
+    tracked files, or out of sync with origin. Published artifacts must be
+    reproducible from pushed commits, so HEAD has to equal origin/PUBLISH_BRANCH
+    exactly (fetched fresh) - not merely share history with it."""
+    def git(*args):
+        return subprocess.run(['git', '-C', repo_dir, *args],
+                              capture_output=True, text=True, check=True).stdout.strip()
+    problems = []
+    try:
+        branch = git('rev-parse', '--abbrev-ref', 'HEAD')
+        if branch != PUBLISH_BRANCH:
+            problems.append(f'{label}: on branch {branch!r}, publish requires {PUBLISH_BRANCH!r}')
+        if git('status', '--porcelain', '--untracked-files=no'):
+            problems.append(f'{label}: working tree has uncommitted changes')
+        git('fetch', '--quiet', 'origin', PUBLISH_BRANCH)
+        local, remote = git('rev-parse', 'HEAD'), git('rev-parse', f'origin/{PUBLISH_BRANCH}')
+        if local != remote:
+            problems.append(f'{label}: HEAD ({local[:10]}) != origin/{PUBLISH_BRANCH} '
+                            f'({remote[:10]}) - push or pull first')
+    except Exception as err:
+        problems.append(f'{label}: git checks failed in {repo_dir}: {err}')
+    return problems
 
-    cpu = os.cpu_count() or 4
-    parser = argparse.ArgumentParser(description='Build the holykeebs firmware matrix.')
-    parser.add_argument('-p', '--parallel', type=int, default=max(1, cpu // 2),
-                        help='number of builds to run concurrently (default: %(default)s)')
-    parser.add_argument('-j', '--jobs', type=int, default=0,
-                        help='make jobs per build (default: cpu // parallel)')
-    parser.add_argument('--rebuild', action='store_true',
-                        help='rebuild every firmware, archiving existing outputs to '
-                             'previous/. Default skips configs already present in '
-                             'build_all/ (resume-friendly); note it does NOT detect '
-                             'stale outputs, so pass --rebuild to refresh after source '
-                             'changes.')
-    args = parser.parse_args()
+def publish_preflight():
+    """All problems that block a publish; empty list means go."""
+    problems = _publish_repo_problems(_SCRIPT_DIR, 'qmk_firmware')
 
-    parallel = max(1, args.parallel)
-    make_jobs = args.jobs if args.jobs > 0 else max(1, cpu // parallel)
+    overlay = _overlay_dir()
+    if overlay:
+        problems += _publish_repo_problems(overlay, 'holykeebs-userspace')
+    else:
+        problems.append('holykeebs-userspace: overlay not found (QMK_USERSPACE / qmk config user.overlay_dir)')
 
+    if subprocess.run(['gh', 'auth', 'status'], capture_output=True).returncode != 0:
+        problems.append('gh: not authenticated (run `gh auth login`)')
+    return problems
+
+def _gh(*args):
+    return subprocess.run(['gh', *args, '-R', PUBLISH_REPO],
+                          capture_output=True, text=True, check=True).stdout
+
+def release_notes(firmware_count, debug_count):
+    state = lambda d: (_repo_state(d) or 'unknown').replace('  ', ' @ ')
+    overlay = _overlay_dir()
+    return '\n'.join([
+        'Precompiled holykeebs firmware for every supported configuration. See the',
+        '[firmware docs](https://docs.holykeebs.com/firmware/) for picking a file;',
+        '`commands.txt` maps each file to the command that produced it.',
+        '',
+        f'- generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}',
+        f'- qmk_firmware: {state(_SCRIPT_DIR)}',
+        f'- holykeebs-userspace: {state(overlay) if overlay else "unknown"}',
+        f'- firmwares: {firmware_count} ({debug_count} debug)',
+    ]) + '\n'
+
+def publish(base_dir, commands, dry_run):
+    """Sync the built matrix to the PUBLISH_REPO 'latest' release: upload every
+    artifact (clobbering same-named ones), prune remote assets that no longer
+    exist locally (except PRESERVED_ASSETS), and refresh the release notes with
+    the source provenance."""
+    # The upload set is derived from the command matrix, not a directory listing,
+    # so stray files in build_all/ can never leak into the release.
+    paths = [destination_for(base_dir, c.file_name()) for c in commands]
+    paths.append(f'{base_dir}/commands.txt')
+    missing = [p for p in paths if not os.path.exists(p)]
+    if missing:
+        print(f'publish: {len(missing)} artifact(s) missing, e.g. {missing[0]}')
+        return 1
+
+    local_names = {os.path.basename(p) for p in paths}
+    remote_names = set(json.loads(_gh('release', 'view', PUBLISH_TAG, '--json', 'assets',
+                                      '--jq', '[.assets[].name]')))
+    prune = sorted(remote_names - local_names - PRESERVED_ASSETS)
+    kept = sorted(remote_names & PRESERVED_ASSETS)
+
+    debug_count = sum(1 for n in local_names if n.startswith('debug_'))
+    print(f'publish: {len(paths)} assets to upload, {len(prune)} stale remote '
+          f'asset(s) to prune, preserving {kept or "none"}')
+    if dry_run:
+        for name in prune:
+            print(f'  would prune: {name}')
+        print('publish: dry run, nothing modified')
+        return 0
+
+    for name in prune:
+        _gh('release', 'delete-asset', PUBLISH_TAG, name, '-y')
+        print(f'  pruned {name}')
+
+    start = time.time()
+    for i in range(0, len(paths), UPLOAD_CHUNK):
+        chunk = paths[i:i + UPLOAD_CHUNK]
+        _gh('release', 'upload', PUBLISH_TAG, *chunk, '--clobber')
+        print(f'  uploaded {min(i + UPLOAD_CHUNK, len(paths))}/{len(paths)} '
+              f'({time.time() - start:.0f}s)')
+
+    _gh('release', 'edit', PUBLISH_TAG,
+        '--notes', release_notes(len(paths) - 1, debug_count))
+    print(f'publish: done, release notes updated '
+          f'(https://github.com/{PUBLISH_REPO}/releases/tag/{PUBLISH_TAG})')
+    return 0
+
+def all_commands():
+    """The full firmware matrix: dedicated keyball boards, the modular board x
+    pointing-device x OLED matrix, and keyball61plus, deduplicated."""
     commands = [
         Command('keyball/keyball39', 'via'),
         Command('keyball/keyball44', 'via'),
@@ -275,7 +372,6 @@ def main() -> int:
     # keyball61plus runs on the holykeebs userspace but isn't part of the modular
     # POINTING_DEVICE matrix above: it's always built dual-PMW3360 combined (the
     # installed ball count is detected at runtime), so add its variants directly.
-    # The off-hand OLED is rotated 180° automatically by the userspace.
     for km in ('via', 'default'):
         for with_oled in (True, False):
             command = Command('holykeebs/keyball61plus', km)
@@ -295,7 +391,57 @@ def main() -> int:
         if name not in seen:
             seen.add(name)
             unique.append(command)
-    commands = unique
+    return unique
+
+def main() -> int:
+    # Line-buffer stdout so the live progress feed is visible even when this runs
+    # in the background with stdout redirected to a file (block-buffered by default).
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(line_buffering=True)
+
+    cpu = os.cpu_count() or 4
+    parser = argparse.ArgumentParser(description='Build the holykeebs firmware matrix.')
+    parser.add_argument('-p', '--parallel', type=int, default=max(1, cpu // 2),
+                        help='number of builds to run concurrently (default: %(default)s)')
+    parser.add_argument('-j', '--jobs', type=int, default=0,
+                        help='make jobs per build (default: cpu // parallel)')
+    parser.add_argument('--rebuild', action='store_true',
+                        help='rebuild every firmware, archiving existing outputs to '
+                             'previous/. Default skips configs already present in '
+                             'build_all/ (resume-friendly); note it does NOT detect '
+                             'stale outputs, so pass --rebuild to refresh after source '
+                             'changes.')
+    parser.add_argument('--publish', action='store_true',
+                        help=f'after a full rebuild, sync the matrix to the '
+                             f'{PUBLISH_REPO} \'{PUBLISH_TAG}\' release: upload all '
+                             f'artifacts, prune stale remote assets (preserving '
+                             f'externally-built ones), and refresh the release notes. '
+                             f'Requires this repo and the overlay to be on '
+                             f'{PUBLISH_BRANCH}, clean, and in sync with origin. '
+                             f'Implies --rebuild.')
+    parser.add_argument('--dry-run', action='store_true',
+                        help='with --publish: build everything and show what would be '
+                             'uploaded/pruned without modifying the release.')
+    args = parser.parse_args()
+
+    if args.dry_run and not args.publish:
+        parser.error('--dry-run only makes sense with --publish')
+    if args.publish:
+        problems = publish_preflight()
+        if problems:
+            print('publish preflight failed:')
+            for p in problems:
+                print(f'  - {p}')
+            return 1
+        if not args.rebuild:
+            # A publish must never ship stale leftovers from an older source state.
+            print('publish: forcing --rebuild')
+            args.rebuild = True
+
+    parallel = max(1, args.parallel)
+    make_jobs = args.jobs if args.jobs > 0 else max(1, cpu // parallel)
+
+    commands = all_commands()
 
     base_dir = 'build_all'
     for sub in ('debug', 'previous', 'logs'):
@@ -353,6 +499,9 @@ def main() -> int:
     elapsed = time.time() - start
     print(f'\nBuilt {total} firmwares in {elapsed:.0f}s ({elapsed / 60:.1f} min); '
           f'{len(commands)} total present.')
+
+    if args.publish:
+        return publish(base_dir, commands, args.dry_run)
     return 0
 
 if __name__ == '__main__':

@@ -118,3 +118,11 @@ the master from USB, so no master side is pinned (the userspace skips the forced
 always passes `USER_NAME=holykeebs` and a unique `TARGET` per build (so parallel
 builds don't clobber each other). Run `python3 build_all.py` (`--help` for jobs
 / parallelism).
+
+`python3 build_all.py --publish` is the formal release flow: it requires this
+repo **and** the overlay to be on `hk-master`, clean, and in sync with origin,
+forces a full rebuild, then syncs the matrix to the
+`holykeebs/qmk_compiled` `latest` release (uploads everything, prunes stale
+remote assets, preserves externally-built ones like the killerwhale file, and
+refreshes the release notes with source provenance). Add `--dry-run` to see the
+upload/prune plan without touching the release.
