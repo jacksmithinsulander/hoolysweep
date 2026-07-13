@@ -1,0 +1,24 @@
+rule bootstrap
+  command = ./scripts/bootstrap.sh
+  description = Bootstrapping HolyKeebs sources
+
+rule build_half
+  command = ./scripts/build-half.sh $side
+  description = Building $side half
+
+rule clean_rule
+  command = ./scripts/clean.sh
+  description = Cleaning build outputs
+
+build .vendor/.bootstrapped: bootstrap
+
+build left: build_half .vendor/.bootstrapped
+  side = left
+
+build right: build_half .vendor/.bootstrapped
+  side = right
+
+build all: phony left right
+build clean: clean_rule
+
+default all

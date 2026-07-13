@@ -1,6 +1,6 @@
 # hoolysweep
 
-Minimal source for the flashed layout on a HolyKeebs `holykeebs/sweeq`:
+Minimal source for the flashed HolyKeebs `holykeebs/sweeq` layout:
 
 - keymap: `indianpojken_macos_sv`
 - OS: macOS
@@ -8,49 +8,47 @@ Minimal source for the flashed layout on a HolyKeebs `holykeebs/sweeq`:
 - pointing combo: left trackpoint + right TPS43
 - USB/master side: left
 
-## Files
+## Fresh Clone Build
 
-Copy this folder into the HolyKeebs QMK fork at the same path:
-
-`keyboards/holykeebs/sweeq/keymaps/indianpojken_macos_sv`
-
-## Build
-
-Current HolyKeebs/QMK setup does not expose a real `samu` build path here.
-`./util/docker_build.sh` delegates to `make` internally, so these are the
-working commands for this setup.
-
-Build left:
+From the repo root:
 
 ```sh
-QMK_USERSPACE=/path/to/qmk-userspace \
-SKIP_FLASHING_SUPPORT=1 \
-./util/docker_build.sh "holykeebs/sweeq:indianpojken_macos_sv" \
-  -e USER_NAME=holykeebs \
-  -e POINTING_DEVICE=trackpoint_tps43 \
-  -e SIDE=left \
-  -j8
+./samu left
+./samu right
 ```
 
-Build right:
+That will:
+
+1. enter a Nix dev shell,
+2. fetch the HolyKeebs `qmk_firmware` and `qmk-userspace` sources into `.vendor/`,
+3. copy this keymap into the fetched `qmk_firmware` tree,
+4. build the requested half.
+
+Artifacts end up in:
+
+- `artifacts/holykeebs_sweeq_indianpojken_macos_sv_left.uf2`
+- `artifacts/holykeebs_sweeq_indianpojken_macos_sv_right.uf2`
+
+## Other Targets
+
+Build both halves:
 
 ```sh
-QMK_USERSPACE=/path/to/qmk-userspace \
-SKIP_FLASHING_SUPPORT=1 \
-./util/docker_build.sh "holykeebs/sweeq:indianpojken_macos_sv" \
-  -e USER_NAME=holykeebs \
-  -e POINTING_DEVICE=trackpoint_tps43 \
-  -e SIDE=right \
-  -j8
+./samu all
 ```
 
-The resulting UF2 files are:
+Clean generated files:
 
-- left: `holykeebs_sweeq_indianpojken_macos_sv.uf2`
-- right: build again with `SIDE=right`
+```sh
+./samu clean
+```
 
-## Flash
+## Notes
 
+- this repo uses Nix, not Docker
+- the root build entrypoint is `build.ninja`, executed through the `./samu` wrapper
+- upstream QMK still compiles through `make` internally; this repo just gives you a root-level `samu` workflow
+- the HolyKeebs `qmk_firmware` and `qmk-userspace` revisions are pinned to the exact commits this layout was built and flashed from
 - left UF2 goes to the left half
 - right UF2 goes to the right half
 - connect USB to the left half in normal use
