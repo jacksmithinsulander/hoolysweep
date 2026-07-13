@@ -16,7 +16,11 @@ Copy this folder into the HolyKeebs QMK fork at the same path:
 
 ## Build
 
-From the HolyKeebs `qmk_firmware` repo root:
+Current HolyKeebs/QMK setup does not expose a real `samu` build path here.
+`./util/docker_build.sh` delegates to `make` internally, so these are the
+working commands for this setup.
+
+Build left:
 
 ```sh
 QMK_USERSPACE=/path/to/qmk-userspace \
@@ -28,7 +32,17 @@ SKIP_FLASHING_SUPPORT=1 \
   -j8
 ```
 
-Build the right half the same way, but change `SIDE=left` to `SIDE=right`.
+Build right:
+
+```sh
+QMK_USERSPACE=/path/to/qmk-userspace \
+SKIP_FLASHING_SUPPORT=1 \
+./util/docker_build.sh "holykeebs/sweeq:indianpojken_macos_sv" \
+  -e USER_NAME=holykeebs \
+  -e POINTING_DEVICE=trackpoint_tps43 \
+  -e SIDE=right \
+  -j8
+```
 
 The resulting UF2 files are:
 
