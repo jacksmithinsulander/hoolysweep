@@ -1,0 +1,36 @@
+#include "keydefs/keycodes.h"
+#include "keydefs/macros.h"
+
+// DEF
+COMB(esc_combo,   KC_ESC,  KC_Q,    KC_W)
+COMB(enter_combo, KC_ENT,  KC_Z,    KC_X)
+
+COMB(arng_combo,  SE_ARNG, KC_U,    KC_I)      // A-ring
+COMB(adia_combo,  SE_ADIA, KC_J,    KC_K)      // A-umlaut
+COMB(odia_combo,  SE_ODIA, KC_M,    SE_COMM)   // O-umlaut
+
+// NAV
+COMB(zdec_combo,  MC_ZDEC, KC_TABL, TB_NEXT)
+COMB(zrst_combo,  MC_ZRST, KC_TABL, TB_NEXT, KC_TABR)
+COMB(zinc_combo,  MC_ZINC, TB_NEXT, KC_TABR)
+
+COMB(tabu_combo,  MC_TABU, KC_TABR, KC_TABN)
+
+COMB(dwrd_combo,  MC_BWRD, KC_BSPC, KC_UP)
+COMB(bwrd_combo,  MC_DWRD, KC_UP,   KC_DEL)
+
+COMB(home_combo,  KC_HOME, KC_LEFT, KC_DOWN)
+COMB(end_combo,   KC_END,  KC_DOWN, KC_RIGHT)
+
+COMB(vold_combo,  KC_VOLD, KC_MPRV, KC_MPLY)
+COMB(volm_combo,  KC_MUTE, KC_MPRV, KC_MPLY, KC_MNXT)
+COMB(volu_combo,  KC_VOLU, KC_MPLY, KC_MNXT)
+
+// SYM
+COMB(acut_combo,   SE_ACUT,  SE_RABK, SE_RPRN)   // acute accent
+
+COMB(nteq_combo,   TX_NTEQ,   SE_LBRC, SE_LCBR)
+COMB(lteq_combo,   TX_LTEQ,   SE_LCBR, SE_LPRN)
+COMB(arrow_combo,  TX_ARROW,  SE_ASTR, SE_UNDS)
+COMB(struct_combo, TX_STRUCT, SE_UNDS, SE_EQL)
+COMB(gteq_combo,   TX_GTEQ,   SE_RPRN, SE_RCBR)
